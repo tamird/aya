@@ -1,3 +1,4 @@
+#![no_builtins]
 #![no_std]
 #![expect(unused_crate_dependencies, reason = "used in bins")]
 

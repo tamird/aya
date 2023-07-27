@@ -1,5 +1,6 @@
-#![no_std]
+#![no_builtins]
 #![no_main]
+#![no_std]
 #![expect(unused_crate_dependencies, reason = "used in other bins")]
 
 use core::mem;
