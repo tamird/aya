@@ -90,13 +90,7 @@ impl<T: BorrowMut<MapData>, V: Pod> Array<T, V> {
         let data = self.inner.borrow_mut();
         check_bounds(data, index)?;
         let fd = data.fd().as_fd();
-        bpf_map_update_elem(fd, Some(&index), value.borrow(), flags).map_err(|(_, io_error)| {
-            SyscallError {
-                call: "bpf_map_update_elem",
-                io_error,
-            }
-        })?;
-        Ok(())
+        bpf_map_update_elem(fd, Some(&index), value.borrow(), flags).map_err(Into::into)
     }
 }
 

@@ -87,13 +87,7 @@ impl<T: BorrowMut<MapData>> SockMap<T> {
         let data = self.inner.borrow_mut();
         let fd = data.fd().as_fd();
         check_bounds(data, index)?;
-        bpf_map_update_elem(fd, Some(&index), &socket.as_raw_fd(), flags).map_err(
-            |(_, io_error)| SyscallError {
-                call: "bpf_map_update_elem",
-                io_error,
-            },
-        )?;
-        Ok(())
+        bpf_map_update_elem(fd, Some(&index), &socket.as_raw_fd(), flags).map_err(Into::into)
     }
 
     /// Removes the socket stored at `index` from the map.

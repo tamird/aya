@@ -79,12 +79,6 @@ impl<T: BorrowMut<MapData>, V: Pod> Stack<T, V> {
     /// [`MapError::SyscallError`] if `bpf_map_update_elem` fails.
     pub fn push(&mut self, value: impl Borrow<V>, flags: u64) -> Result<(), MapError> {
         let fd = self.inner.borrow().fd().as_fd();
-        bpf_map_update_elem(fd, None::<&u32>, value.borrow(), flags).map_err(|(_, io_error)| {
-            SyscallError {
-                call: "bpf_map_update_elem",
-                io_error,
-            }
-        })?;
-        Ok(())
+        bpf_map_update_elem(fd, None::<&u32>, value.borrow(), flags).map_err(Into::into)
     }
 }

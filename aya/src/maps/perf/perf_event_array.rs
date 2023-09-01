@@ -13,7 +13,7 @@ use bytes::BytesMut;
 use crate::{
     maps::{
         perf::{Events, PerfBuffer, PerfBufferError},
-        MapData, MapError,
+        MapData, MapError, SyscallError,
     },
     sys::bpf_map_update_elem,
     util::page_size,
@@ -190,7 +190,7 @@ impl<T: BorrowMut<MapData>> PerfEventArray<T> {
         let map_fd = map_data.fd().as_fd();
         let buf = PerfBuffer::open(index, self.page_size, page_count.unwrap_or(2))?;
         bpf_map_update_elem(map_fd, Some(&index), &buf.as_raw_fd(), 0)
-            .map_err(|(_, io_error)| io_error)?;
+            .map_err(|SyscallError { call: _, io_error }| io_error)?;
 
         Ok(PerfEventArrayBuffer {
             buf,

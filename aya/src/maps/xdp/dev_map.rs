@@ -137,7 +137,7 @@ impl<T: BorrowMut<MapData>> DevMap<T> {
         check_bounds(data, index)?;
         let fd = data.fd().as_fd();
 
-        let res = if FEATURES.devmap_prog_id() {
+        if FEATURES.devmap_prog_id() {
             let mut value = unsafe { std::mem::zeroed::<bpf_devmap_val>() };
             value.ifindex = target_if_index;
             // Default is valid as the kernel will only consider fd > 0:
@@ -152,15 +152,9 @@ impl<T: BorrowMut<MapData>> DevMap<T> {
                 return Err(XdpMapError::ChainedProgramNotSupported);
             }
             bpf_map_update_elem(fd, Some(&index), &target_if_index, flags)
-        };
-
-        res.map_err(|(_, io_error)| {
-            MapError::from(SyscallError {
-                call: "bpf_map_update_elem",
-                io_error,
-            })
-        })?;
-        Ok(())
+        }
+        .map_err(MapError::from)
+        .map_err(Into::into)
     }
 }
 

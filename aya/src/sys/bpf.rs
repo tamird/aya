@@ -276,7 +276,7 @@ pub(crate) fn bpf_map_update_elem<K: Pod, V: Pod>(
     key: Option<&K>,
     value: &V,
     flags: u64,
-) -> SysResult<c_long> {
+) -> Result<(), SyscallError> {
     let mut attr = unsafe { mem::zeroed::<bpf_attr>() };
 
     let u = unsafe { &mut attr.__bindgen_anon_2 };
@@ -287,7 +287,19 @@ pub(crate) fn bpf_map_update_elem<K: Pod, V: Pod>(
     u.__bindgen_anon_1.value = value as *const _ as u64;
     u.flags = flags;
 
-    sys_bpf(bpf_cmd::BPF_MAP_UPDATE_ELEM, &mut attr)
+    match sys_bpf(bpf_cmd::BPF_MAP_UPDATE_ELEM, &mut attr) {
+        Ok(code) => {
+            assert_eq!(code, 0);
+            Ok(())
+        }
+        Err((code, io_error)) => {
+            assert_eq!(code, -1);
+            Err(SyscallError {
+                call: "bpf_map_update_elem",
+                io_error,
+            })
+        }
+    }
 }
 
 pub(crate) fn bpf_map_push_elem<V: Pod>(

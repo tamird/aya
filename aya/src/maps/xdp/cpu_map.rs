@@ -146,7 +146,7 @@ impl<T: BorrowMut<MapData>> CpuMap<T> {
         check_bounds(data, cpu_index)?;
         let fd = data.fd().as_fd();
 
-        let res = if FEATURES.cpumap_prog_id() {
+        if FEATURES.cpumap_prog_id() {
             let mut value = unsafe { std::mem::zeroed::<bpf_cpumap_val>() };
             value.qsize = queue_size;
             // Default is valid as the kernel will only consider fd > 0:
@@ -160,15 +160,9 @@ impl<T: BorrowMut<MapData>> CpuMap<T> {
                 return Err(XdpMapError::ChainedProgramNotSupported);
             }
             bpf_map_update_elem(fd, Some(&cpu_index), &queue_size, flags)
-        };
-
-        res.map_err(|(_, io_error)| {
-            MapError::from(SyscallError {
-                call: "bpf_map_update_elem",
-                io_error,
-            })
-        })?;
-        Ok(())
+        }
+        .map_err(MapError::from)
+        .map_err(Into::into)
     }
 }
 
