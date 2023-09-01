@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     maps::{check_kv_size, hash_map, IterableMap, MapData, MapError, MapIter, MapKeys},
-    sys::{bpf_map_lookup_elem, SyscallError},
+    sys::bpf_map_lookup_elem,
     Pod,
 };
 
@@ -54,10 +54,7 @@ impl<T: Borrow<MapData>, K: Pod, V: Pod> HashMap<T, K, V> {
     /// Returns a copy of the value associated with the key.
     pub fn get(&self, key: &K, flags: u64) -> Result<V, MapError> {
         let fd = self.inner.borrow().fd().as_fd();
-        let value = bpf_map_lookup_elem(fd, key, flags).map_err(|(_, io_error)| SyscallError {
-            call: "bpf_map_lookup_elem",
-            io_error,
-        })?;
+        let value = bpf_map_lookup_elem(fd, key, flags)?;
         value.ok_or(MapError::KeyNotFound)
     }
 
@@ -119,7 +116,7 @@ mod tests {
         },
         maps::Map,
         obj,
-        sys::{override_syscall, SysResult, Syscall},
+        sys::{override_syscall, SysResult, Syscall, SyscallError},
     };
 
     fn new_obj_map() -> obj::Map {

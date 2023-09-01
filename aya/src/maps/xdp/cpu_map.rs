@@ -12,7 +12,7 @@ use super::XdpMapError;
 use crate::{
     maps::{check_bounds, check_kv_size, IterableMap, MapData, MapError},
     programs::ProgramFd,
-    sys::{bpf_map_lookup_elem, bpf_map_update_elem, SyscallError},
+    sys::{bpf_map_lookup_elem, bpf_map_update_elem},
     Pod, FEATURES,
 };
 
@@ -100,13 +100,8 @@ impl<T: Borrow<MapData>> CpuMap<T> {
                     prog_id: None,
                 })
             })
-        };
-        value
-            .map_err(|(_, io_error)| SyscallError {
-                call: "bpf_map_lookup_elem",
-                io_error,
-            })?
-            .ok_or(MapError::KeyNotFound)
+        }?;
+        value.ok_or(MapError::KeyNotFound)
     }
 
     /// An iterator over the elements of the map.
