@@ -237,8 +237,14 @@ pub(crate) fn bpf_map_lookup_and_delete_elem<K: Pod, V: Pod>(
     fd: BorrowedFd<'_>,
     key: Option<&K>,
     flags: u64,
-) -> Result<Option<V>, (c_long, io::Error)> {
-    lookup(fd, key, flags, bpf_cmd::BPF_MAP_LOOKUP_AND_DELETE_ELEM)
+) -> Result<Option<V>, SyscallError> {
+    lookup(fd, key, flags, bpf_cmd::BPF_MAP_LOOKUP_AND_DELETE_ELEM).map_err(|(code, io_error)| {
+        assert_eq!(code, -1);
+        SyscallError {
+            call: "bpf_map_lookup_and_delete_elem",
+            io_error,
+        }
+    })
 }
 
 pub(crate) fn bpf_map_lookup_elem_per_cpu<K: Pod, V: Pod>(
