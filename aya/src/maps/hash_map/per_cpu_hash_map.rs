@@ -63,11 +63,7 @@ impl<T: Borrow<MapData>, K: Pod, V: Pod> PerCpuHashMap<T, K, V> {
     /// Returns a slice of values - one for each CPU - associated with the key.
     pub fn get(&self, key: &K, flags: u64) -> Result<PerCpuValues<V>, MapError> {
         let fd = self.inner.borrow().fd().as_fd();
-        let values =
-            bpf_map_lookup_elem_per_cpu(fd, key, flags).map_err(|(_, io_error)| SyscallError {
-                call: "bpf_map_lookup_elem",
-                io_error,
-            })?;
+        let values = bpf_map_lookup_elem_per_cpu(fd, key, flags)?;
         values.ok_or(MapError::KeyNotFound)
     }
 
