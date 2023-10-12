@@ -107,8 +107,8 @@ impl<T: Borrow<MapData>> StackTraceMap<T> {
 
         let mut frames = vec![0; self.max_stack_depth];
         bpf_map_lookup_elem_ptr(fd, Some(stack_id), frames.as_mut_ptr(), flags)
-            .map_err(|(_, io_error)| SyscallError {
-                call: "bpf_map_lookup_elem",
+            .map_err(|io_error| SyscallError {
+                call: "bpf_map_lookup_elem_ptr",
                 io_error,
             })?
             .ok_or(MapError::KeyNotFound)?;

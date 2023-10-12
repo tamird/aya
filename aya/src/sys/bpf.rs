@@ -255,10 +255,6 @@ pub(crate) fn bpf_map_lookup_elem_per_cpu<K: Pod, V: Pod>(
     PerCpuValues::<V>::alloc_kernel_mem()
         .and_then(|mut mem| {
             bpf_map_lookup_elem_ptr(fd, Some(key), mem.as_mut_ptr(), flags)
-                .map_err(|(code, io_error)| {
-                    assert_eq!(code, -1);
-                    io_error
-                })
                 .map(|option| option.map(|()| unsafe { PerCpuValues::from_kernel_mem(mem) }))
         })
         .map_err(|io_error| SyscallError {
@@ -272,7 +268,7 @@ pub(crate) fn bpf_map_lookup_elem_ptr<K: Pod, V>(
     key: Option<&K>,
     value: *mut V,
     flags: u64,
-) -> Result<Option<()>, (c_long, io::Error)> {
+) -> std::io::Result<Option<()>> {
     let mut attr = unsafe { mem::zeroed::<bpf_attr>() };
 
     let u = unsafe { &mut attr.__bindgen_anon_2 };
@@ -284,9 +280,18 @@ pub(crate) fn bpf_map_lookup_elem_ptr<K: Pod, V>(
     u.flags = flags;
 
     match sys_bpf(bpf_cmd::BPF_MAP_LOOKUP_ELEM, &mut attr) {
-        Ok(_) => Ok(Some(())),
-        Err((_, io_error)) if io_error.raw_os_error() == Some(ENOENT) => Ok(None),
-        Err(e) => Err(e),
+        Ok(code) => {
+            assert_eq!(code, 0);
+            Ok(Some(()))
+        }
+        Err((code, io_error)) => {
+            assert_eq!(code, -1);
+            if io_error.kind() == io::ErrorKind::NotFound {
+                Ok(None)
+            } else {
+                Err(io_error)
+            }
+        }
     }
 }
 
