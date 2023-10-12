@@ -69,11 +69,7 @@ impl<T: BorrowMut<MapData>, V: Pod> BloomFilter<T, V> {
     /// Inserts a value into the map.
     pub fn insert(&mut self, value: impl Borrow<V>, flags: u64) -> Result<(), MapError> {
         let fd = self.inner.borrow_mut().fd().as_fd();
-        bpf_map_push_elem(fd, value.borrow(), flags).map_err(|(_, io_error)| SyscallError {
-            call: "bpf_map_push_elem",
-            io_error,
-        })?;
-        Ok(())
+        bpf_map_push_elem(fd, value.borrow(), flags).map_err(Into::into)
     }
 }
 

@@ -271,18 +271,18 @@ pub(crate) fn bpf_map_lookup_elem_ptr<K: Pod, V>(
     }
 }
 
-pub(crate) fn bpf_map_update_elem<K: Pod, V: Pod>(
+fn bpf_map_insert_elem<V: Pod>(
     fd: BorrowedFd<'_>,
-    key: Option<&K>,
+    key: Option<u64>,
     value: &V,
     flags: u64,
-) -> Result<(), SyscallError> {
+) -> std::io::Result<()> {
     let mut attr = unsafe { mem::zeroed::<bpf_attr>() };
 
     let u = unsafe { &mut attr.__bindgen_anon_2 };
     u.map_fd = fd.as_raw_fd() as u32;
     if let Some(key) = key {
-        u.key = key as *const _ as u64;
+        u.key = key;
     }
     u.__bindgen_anon_1.value = value as *const _ as u64;
     u.flags = flags;
@@ -294,27 +294,34 @@ pub(crate) fn bpf_map_update_elem<K: Pod, V: Pod>(
         }
         Err((code, io_error)) => {
             assert_eq!(code, -1);
-            Err(SyscallError {
-                call: "bpf_map_update_elem",
-                io_error,
-            })
+            Err(io_error)
         }
     }
+}
+
+pub(crate) fn bpf_map_update_elem<K: Pod, V: Pod>(
+    fd: BorrowedFd<'_>,
+    key: Option<&K>,
+    value: &V,
+    flags: u64,
+) -> Result<(), SyscallError> {
+    bpf_map_insert_elem(fd, key.map(|key| key as *const _ as u64), value, flags).map_err(
+        |io_error| SyscallError {
+            call: "bpf_map_update_elem",
+            io_error,
+        },
+    )
 }
 
 pub(crate) fn bpf_map_push_elem<V: Pod>(
     fd: BorrowedFd<'_>,
     value: &V,
     flags: u64,
-) -> SysResult<c_long> {
-    let mut attr = unsafe { mem::zeroed::<bpf_attr>() };
-
-    let u = unsafe { &mut attr.__bindgen_anon_2 };
-    u.map_fd = fd.as_raw_fd() as u32;
-    u.__bindgen_anon_1.value = value as *const _ as u64;
-    u.flags = flags;
-
-    sys_bpf(bpf_cmd::BPF_MAP_UPDATE_ELEM, &mut attr)
+) -> Result<(), SyscallError> {
+    bpf_map_insert_elem(fd, None, value, flags).map_err(|io_error| SyscallError {
+        call: "bpf_map_push_elem",
+        io_error,
+    })
 }
 
 pub(crate) fn bpf_map_update_elem_ptr<K, V>(

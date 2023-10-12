@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     maps::{check_kv_size, MapData, MapError},
-    sys::{bpf_map_lookup_and_delete_elem, bpf_map_push_elem, SyscallError},
+    sys::{bpf_map_lookup_and_delete_elem, bpf_map_push_elem},
     Pod,
 };
 
@@ -79,10 +79,6 @@ impl<T: BorrowMut<MapData>, V: Pod> Queue<T, V> {
     /// [`MapError::SyscallError`] if `bpf_map_update_elem` fails.
     pub fn push(&mut self, value: impl Borrow<V>, flags: u64) -> Result<(), MapError> {
         let fd = self.inner.borrow().fd().as_fd();
-        bpf_map_push_elem(fd, value.borrow(), flags).map_err(|(_, io_error)| SyscallError {
-            call: "bpf_map_push_elem",
-            io_error,
-        })?;
-        Ok(())
+        bpf_map_push_elem(fd, value.borrow(), flags).map_err(Into::into)
     }
 }
