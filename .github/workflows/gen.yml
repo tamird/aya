@@ -2,9 +2,6 @@ name: codegen
 
 on:
   push:
-    branches:
-      - main
-
   schedule:
     - cron: 00 4 * * *
 
