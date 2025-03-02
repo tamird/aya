@@ -145,28 +145,24 @@ impl PerfBuffer {
             return Err(PerfBufferError::NoBuffers);
         }
         let header = self.buf().as_ptr();
-        let base = header as usize + self.page_size;
+        let base = unsafe { header.byte_add(self.page_size) };
 
         let mut events = Events { read: 0, lost: 0 };
         let mut buf_n = 0;
 
-        let fill_buf = |start_off, base, mmap_size, out_buf: &mut [u8]| {
+        let fill_buf = |start_off, base: *const u8, mmap_size, out_buf: &mut [u8]| {
             let len = out_buf.len();
 
             let end = (start_off + len) % mmap_size;
             let start = start_off % mmap_size;
 
             if start < end {
-                out_buf.copy_from_slice(unsafe {
-                    slice::from_raw_parts((base + start) as *const u8, len)
-                });
+                out_buf.copy_from_slice(unsafe { slice::from_raw_parts(base.add(start), len) });
             } else {
                 let size = mmap_size - start;
                 unsafe {
-                    out_buf[..size]
-                        .copy_from_slice(slice::from_raw_parts((base + start) as *const u8, size));
-                    out_buf[size..]
-                        .copy_from_slice(slice::from_raw_parts(base as *const u8, len - size));
+                    out_buf[..size].copy_from_slice(slice::from_raw_parts(base.add(start), size));
+                    out_buf[size..].copy_from_slice(slice::from_raw_parts(base, len - size));
                 }
             }
         };
@@ -227,11 +223,11 @@ impl PerfBuffer {
             let buf = &mut buffers[buf_n];
 
             let event_start = tail % self.size;
-            let event =
-                unsafe { ptr::read_unaligned((base + event_start) as *const perf_event_header) };
+            let event: perf_event_header =
+                unsafe { ptr::read_unaligned(base.byte_add(event_start).cast()) };
             let event_size = event.size as usize;
 
-            match read_event(event_start, event.type_, base, buf) {
+            match read_event(event_start, event.type_, base.cast(), buf) {
                 Ok(Some((read, lost))) => {
                     if read > 0 {
                         buf_n += 1;
@@ -328,10 +324,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(
-        miri,
-        ignore = "`unsafe { (*header).data_tail = tail as u64 };` is attempting a write access using using a tag that only grants SharedReadOnly permission"
-    )]
     fn test_no_events() {
         let mmapped_buf = MMappedBuf {
             data: [0; PAGE_SIZE * 2],
