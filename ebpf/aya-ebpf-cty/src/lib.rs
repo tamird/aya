@@ -17,19 +17,17 @@ mod ad {
     pub type c_int = i32;
     pub type c_uint = u32;
 
-    #[cfg(bpf_target_arch = "arm")]
+    #[cfg(any(
+        bpf_target_arch = "aarch64",
+        bpf_target_arch = "arm",
+        bpf_target_arch = "powerpc64",
+        bpf_target_arch = "riscv64",
+        bpf_target_arch = "s390x",
+        bpf_target_arch = "mips",
+    ))]
     pub type c_char = super::c_uchar;
-    #[cfg(bpf_target_arch = "aarch64")]
-    pub type c_char = super::c_uchar;
-    #[cfg(bpf_target_arch = "powerpc64")]
-    pub type c_char = super::c_uchar;
-    #[cfg(bpf_target_arch = "riscv64")]
-    pub type c_char = super::c_uchar;
-    #[cfg(bpf_target_arch = "s390x")]
-    pub type c_char = super::c_uchar;
-    #[cfg(bpf_target_arch = "mips")]
-    pub type c_char = super::c_uchar;
-    #[cfg(bpf_target_arch = "x86_64")]
+
+    #[cfg(any(bpf_target_arch = "loongarch64", bpf_target_arch = "x86_64"))]
     pub type c_char = super::c_schar;
 }
 
@@ -53,14 +51,15 @@ mod ad {
 }
 
 #[cfg(any(
+    target_arch = "loongarch64",
     target_arch = "mips",
     target_arch = "mips64",
+    target_arch = "nvptx",
+    target_arch = "nvptx64",
     target_arch = "sparc64",
     target_arch = "x86",
     target_arch = "x86_64",
-    target_arch = "nvptx",
-    target_arch = "nvptx64",
-    target_arch = "xtensa"
+    target_arch = "xtensa",
 ))]
 mod ad {
     pub type c_char = super::c_schar;
