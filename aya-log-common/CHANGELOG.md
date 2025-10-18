@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Breaking Changes
+
+ - Seal the `Argument` trait to preserve the invariants required by the new
+   zero-copy logger implementation.
+
+### New Features
+
+ - Add support for logging raw pointer arguments via the `:p` format hint.
+
+### Improvements
+
+ - Rework the formatter to eliminate temporary buffers, lowering the cost of
+   emitting log records from eBPF programs.
+
 ## 0.1.15 (2024-10-09)
 
 <csr-id-a75fc2f7691dad21822c2eff35281abd3c4b5d23/>
@@ -342,4 +358,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Merge pull request #350 from dave-tucker/monorepo ([`f37a514`](https://github.com/aya-rs/aya/commit/f37a51433ff5283205ba5d1e74cdc75fbdeea160))
     - Re-organize into a single workspace ([`dc31e11`](https://github.com/aya-rs/aya/commit/dc31e11691bbb8ae916da9da873fdc37ff261c27))
 </details>
-

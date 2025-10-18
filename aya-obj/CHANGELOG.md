@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### New Features
+
+ - Add Flow Dissector program support to the object loader.
+ - Support BTF-defined array maps and LSM cgroup attachment metadata.
+ - Generate bindings for LoongArch64 targets.
+
+### Bug Fixes
+
+ - Apply enum64-to-union relocation fixups so CO-RE programs load correctly.
+ - Handle zero-sized data sections when patching map contents.
+ - Surface BTF load failures for relocations instead of silently ignoring missing BTF.
+
+### Improvements
+
+ - Improve relocation error messages to make loader failures easier to diagnose.
+
 ## 0.2.1 (2024-11-01)
 
 ### New Features
@@ -789,4 +807,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Migrate aya::obj into a separate crate ([`ac49827`](https://github.com/aya-rs/aya/commit/ac49827e204801079be2b87160a795ef412bd6cb))
     - Migrate bindgen destination ([`81bc307`](https://github.com/aya-rs/aya/commit/81bc307dce452f0aacbfbe8c304089d11ddd8c5e))
 </details>
-

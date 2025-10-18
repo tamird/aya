@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### New Features
+
+ - Add generated bindings for MIPS and LoongArch64 targets.
+ - Update the vendored libbpf headers to 324f3c3846d9 for the latest kernel
+   constants.
+
+### Bug Fixes
+
+ - Fix riscv64 builds by adjusting cfgs in the generated bindings.
+
 ## v0.1.1 (2024-10-09)
 
 ### Other
@@ -85,4 +97,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Merge pull request #528 from dave-tucker/rename-all-the-things ([`63d8d4d`](https://github.com/aya-rs/aya/commit/63d8d4d34bdbbee149047dc0a5e9c2b191f3b32d))
     - Rename bpf -> ebpf ([`70ac91d`](https://github.com/aya-rs/aya/commit/70ac91dc1e6f209a701cd868db215763d65efa73))
 </details>
-

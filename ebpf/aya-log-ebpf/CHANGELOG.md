@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Breaking Changes
+
+ - Switch the logger transport to a ring buffer, reducing copies but requiring
+   at least Linux 5.8.
+
+### New Features
+
+ - Add a load-time `AYA_LOG_LEVEL` mask so unwanted log levels can be compiled
+   out before verification.
+ - Support logging raw pointer arguments via the `:p` format hint.
+
 ## 0.1.1 (2024-10-09)
 
 Maintenance release. Update to latest aya-ebpf version v0.1.1.
@@ -74,4 +87,3 @@ Maintenance release. Update to latest aya-ebpf version v0.1.1.
     - Rename bpf -> ebpf ([`41c6156`](https://github.com/aya-rs/aya/commit/41c61560eae01a30c703ea22c5bfeeff0ecf6b1b))
     - Rename bpf dir to ebpf ([`022aff9`](https://github.com/aya-rs/aya/commit/022aff96aa7299ccc7ec7e85829bb842d39b1501))
 </details>
-

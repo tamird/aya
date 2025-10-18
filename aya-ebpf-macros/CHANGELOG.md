@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### New Features
+
+ - Add Flow Dissector program support to the procedural macros.
+ - Generate helpers for LSM cgroup attachments.
+ - Introduce BTF-backed array map definitions.
+
+### Improvements
+
+ - Switch to `proc-macro2-diagnostics` for richer compile-time error messages.
+
 ## v0.1.1 (2024-10-09)
 
 ### Chore
@@ -80,4 +92,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Merge pull request #528 from dave-tucker/rename-all-the-things ([`63d8d4d`](https://github.com/aya-rs/aya/commit/63d8d4d34bdbbee149047dc0a5e9c2b191f3b32d))
     - Rename bpf -> ebpf ([`ea80737`](https://github.com/aya-rs/aya/commit/ea8073793e44c593e983e69eaa43a4f72799bfc5))
 </details>
-

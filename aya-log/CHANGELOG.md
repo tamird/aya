@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   levels at load-time. Disabled levels are eliminated by the verifier, reducing
   instruction count and avoiding program size limits when extensive logging is
   present.
+- Implement `AsFd` for `EbpfLogger`, allowing direct integration with
+  whichever async runtime the application uses.
+- Add support for logging raw pointer arguments via the `:p` format hint.
 
 ### Breaking Changes
 
@@ -462,4 +465,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Update readme ([`5df853c`](https://github.com/aya-rs/aya/commit/5df853cfb030c3a37a066b892623546a77c97db2))
     - Initial commit ([`b29a061`](https://github.com/aya-rs/aya/commit/b29a061bce99d06971dc977ddc075cbf653971d4))
 </details>
-

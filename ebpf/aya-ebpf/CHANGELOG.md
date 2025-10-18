@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### New Features
+
+ - Add Flow Dissector program support to the eBPF helper library.
+ - Introduce BTF-backed array map definitions and helpers for
+   `BPF_MAP_TYPE_SK_STORAGE`.
+ - Provide `Array::set`, `Queue::peek`, `Stack::peek`, and `RingBufBytes` to
+   simplify interacting with maps and ring buffers.
+ - Expose `XdpContext::ifindex` and add helpers like `bpf_strncmp` for use
+   inside eBPF programs.
+ - Implement `FromPtRegs` for MIPS and wire up LoongArch64 targets.
+
+### Bug Fixes
+
+ - Handle raw tracepoint arguments correctly so programs receive the expected
+   context.
+ - Fix riscv64 builds and disable `generic_const_exprs` so the crate compiles on
+   stable toolchains.
+
+### Improvements
+
+ - Allow map APIs to accept borrowed keys and values via `Borrow`/`BorrowMut`,
+   avoiding unnecessary copies.
+
 ## v0.1.1 (2024-10-09)
 
 ### New Features
@@ -115,4 +140,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Rename bpf -> ebpf ([`ea80737`](https://github.com/aya-rs/aya/commit/ea8073793e44c593e983e69eaa43a4f72799bfc5))
     - Rename bpf -> ebpf ([`41c6156`](https://github.com/aya-rs/aya/commit/41c61560eae01a30c703ea22c5bfeeff0ecf6b1b))
 </details>
-

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### New Features
+
+ - Support the `:p` display hint so logs containing raw pointer arguments parse
+   correctly.
+
 ## v0.1.13 (2024-04-12)
 
 <csr-id-13b1fc63ef2ae083ba03ce9de24cb4f31f989d21/>
@@ -113,4 +120,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Add format hints for MAC addresses ([`2223ab8`](https://github.com/aya-rs/aya/commit/2223ab828d6db40a85cff4737f6164ed8ee9e42d))
     - Add display hints ([`83ec27f`](https://github.com/aya-rs/aya/commit/83ec27f06b6859f455f2b2baf985b8fd3fb4adc5))
 </details>
-

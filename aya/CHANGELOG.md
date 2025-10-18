@@ -12,6 +12,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Remove `AsyncPerfEventArray` and `AsyncPerfEventArrayBuffer` These types have been removed to
    avoid maintaining support for multiple async runtimes. Use `PerfEventArrayBuffer`, which
    implements `As{,Raw}Fd` for integration with async executors.
+ - Rework `ProgramInfo` into an enum so LSM and LSM_CGROUP programs expose distinct variants and
+   capability checks.
+ - Require typed `PerfEventConfig` values; invalid perf event type/config combinations now error
+   during link creation.
+
+### New Features
+
+ - Add Flow Dissector program support across the loader, macros, and integration tests.
+ - Add support for LSM cgroup attachments.
+ - Recognize BTF array map definitions when loading objects.
+ - Add support for `BPF_MAP_TYPE_SK_STORAGE`.
+ - Add `Map::from_map_data()` to wrap pinned maps discovered at runtime.
+ - Expose `LinkInfo`, `loaded_links`, and `TryFrom<ProgramInfo>` conversions to inspect links and
+   promote discovered programs.
+ - Implement `AsFd` for `RingBuf` and add `XskMap::unset` for AF_XDP management.
+
+### Bug Fixes
+
+ - Promote BTF loading failures for relocations to user-visible errors instead of silently ignoring
+   missing BTF.
+ - Raise `RLIMIT_MEMLOCK` on kernels prior to 5.11 to avoid load failures.
+ - Fix `is_probe_read_kernel_supported` detection on aarch64 5.5.
+ - Ensure truncated map names remain null terminated.
+ - Return `MapError::KeyNotFound` from `PerCpuHashMap` when lookup misses.
+ - Fix feature probes so LSM program support is detected correctly.
+
+### Improvements
+
+ - Return kernel error strings from netlink operations to improve diagnostics.
+ - Uprobe attachment now memory-maps binaries for symbol resolution, reducing memory use.
+ - Cache feature-probe results for program and map info fields to avoid repeated syscalls.
 
 ## 0.13.1 (2024-11-01)
 
@@ -3133,4 +3164,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Add src/generated/netlink_bindings.rs to repo ([`1de3929`](https://github.com/aya-rs/aya/commit/1de392964b8f447615579d231a36e3bb9260b027))
     - Turn the project into a workspace, move code under aya/ ([`af8f769`](https://github.com/aya-rs/aya/commit/af8f769b509e4a002c3bd3138fe745ae962de2db))
 </details>
-

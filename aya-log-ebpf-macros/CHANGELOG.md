@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### New Features
+
+ - Allow logging raw pointer arguments via the `:p` format hint.
+ - Permit the logging macros to be used in expression position.
+
+### Improvements
+
+ - Rework macro expansion to write directly into the ring buffer, avoiding
+   extra copies.
+
 ## v0.1.0 (2024-04-12)
 
 <csr-id-13b1fc63ef2ae083ba03ce9de24cb4f31f989d21/>
@@ -197,4 +209,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Merge pull request #350 from dave-tucker/monorepo ([`f37a514`](https://github.com/aya-rs/aya/commit/f37a51433ff5283205ba5d1e74cdc75fbdeea160))
     - Re-organize into a single workspace ([`dc31e11`](https://github.com/aya-rs/aya/commit/dc31e11691bbb8ae916da9da873fdc37ff261c27))
 </details>
-

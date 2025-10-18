@@ -5,6 +5,14 @@ This project adheres to $[Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### New Features
+
+- Add MIPS typedef support and wire up LoongArch64 builds.
+
+### Bug Fixes
+
+- Fix riscv64 builds by aligning cfgs across the generated bindings.
+
 ## [v0.2.1] - 2019-11-16
 
 ### Added
@@ -121,4 +129,3 @@ This project adheres to $[Semantic Versioning](http://semver.org/).
     - Merge pull request #528 from dave-tucker/rename-all-the-things ([`63d8d4d`](https://github.com/aya-rs/aya/commit/63d8d4d34bdbbee149047dc0a5e9c2b191f3b32d))
     - Rename bpf -> ebpf ([`21f570a`](https://github.com/aya-rs/aya/commit/21f570a19cd8d6e8eeaa6127d936877a701ceac3))
 </details>
-
