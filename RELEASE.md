@@ -37,6 +37,10 @@ cargo smart-release \
   --signoff
 ```
 
+> [!NOTE]
+> When releasing on a non-Linux machine, use `--target` to allow `cargo verify`
+> (invoked by `cargo smart-release`) to succeed.
+
 ### 2. Open a pull request
 
 Because the release branch gets pushed automatically on success, open a PR

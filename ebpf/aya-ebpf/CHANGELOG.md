@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## v0.1.2 (2025-11-17)
+## v0.2.0 (2025-11-17)
 
 ### Breaking Changes
 
- - <csr-id-3569c9afc3dc7babb6b44aa071828df7c8864834/> Map helper functions now take `*mut c_void`, matching the kernel’s prototypes. Any out-of-tree helpers should update their signatures accordingly.
+ - <csr-id-/> Renamed helpers::gen{,erated} and marked the export deprecated.
 
 ### New Features
 
@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Maintenance
 
+ - <csr-id-3569c9afc3dc7babb6b44aa071828df7c8864834/> Map helper functions now take `*mut c_void`, matching the kernel’s prototypes.
  - <csr-id-4f654865e9e592a93e11feb8558a461c4b6865b5/>, <csr-id-4b4b9f83bd6c1762a5366d2d89353adf4364f76e/> Added configuration flags for `generic_const_exprs` and the loongarch target, plus the usual lint/documentation refresh.
 
 ## v0.1.1 (2024-10-09)
