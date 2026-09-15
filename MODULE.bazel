@@ -18,9 +18,6 @@ bazel_dep(name = "libbpf", version = "1.7.0")
 
 # The LLVM toolchain compiles C BPF objects and the integration VM kernels.
 bazel_dep(name = "llvm", version = "0.8.14")
-
-# CONFIG_DEBUG_INFO_BTF requires pahole when linking the integration VM kernels.
-bazel_dep(name = "pahole", version = "1.31")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.20")
 bazel_dep(name = "rules_qemu", version = "0.3.0")
@@ -147,26 +144,150 @@ use_repo(crate, "crates")
 linux_source_repository = use_repo_rule("@linux.bzl//:linux.bzl", "linux_source_repository")
 
 linux_source_repository(
-    name = "aya_linux_6_18_2",
-    integrity = "sha256-VYxrurdJSSs0+Zgn/oB7ADmnRGk8IdOn4Ds6SO2quWo=",
-    strip_prefix = "linux-6.18.2",
-    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.2.tar.xz"],
-    version = "6.18.2",
+    name = "aya_linux_5_10_270",
+    integrity = "sha256-3nPVKLBL6R9uuGZgqmek1TuWu/ILtaMm54+ALXRN6+c=",
+    strip_prefix = "linux-5.10.270",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.10.270.tar.xz"],
+    version = "5.10.270",
+)
+
+linux_source_repository(
+    name = "aya_linux_5_15_221",
+    integrity = "sha256-wHiC4eUo7+IGVnom3jCxktuNxDaZdNTvTOcIaR+hFIw=",
+    strip_prefix = "linux-5.15.221",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.15.221.tar.xz"],
+    version = "5.15.221",
+)
+
+linux_source_repository(
+    name = "aya_linux_6_1_188",
+    integrity = "sha256-7U0KyxMHwjUjDInvwJTiEOYpBZP5Sn5hfyixABEBozo=",
+    strip_prefix = "linux-6.1.188",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.1.188.tar.xz"],
+    version = "6.1.188",
+)
+
+linux_source_repository(
+    name = "aya_linux_6_6_157",
+    integrity = "sha256-t0pD0GMICbeHHMkGrBVelWy8Cy54p0UfXmyL/LEgjDA=",
+    strip_prefix = "linux-6.6.157",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.157.tar.xz"],
+    version = "6.6.157",
+)
+
+linux_source_repository(
+    name = "aya_linux_6_12_110",
+    integrity = "sha256-jO4Z4YObtv9NUlTXYZM65qtnBJLV7QMOCagFODINXEw=",
+    strip_prefix = "linux-6.12.110",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.110.tar.xz"],
+    version = "6.12.110",
+)
+
+linux_source_repository(
+    name = "aya_linux_6_18_52",
+    integrity = "sha256-K2lWT31P6gyFmxlZujNwnubpE5vRAOMKhTtXFZqCIbg=",
+    strip_prefix = "linux-6.18.52",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.52.tar.xz"],
+    version = "6.18.52",
 )
 
 linux_images = use_extension("@linux.bzl//:extensions.bzl", "linux_images")
 linux_images.image(
-    name = "aya_aarch64_kernel_6_18_2",
+    name = "aya_aarch64_kernel_5_10",
     config = "//test/kernel:aya_aarch64.config",
     config_mode = "allnoconfig",
     platform = "@llvm//platforms:linux_arm64",
-    source = "@aya_linux_6_18_2//:Kconfig",
+    source = "@aya_linux_5_10_270//:Kconfig",
 )
 linux_images.image(
-    name = "aya_x86_64_kernel_6_18_2",
+    name = "aya_x86_64_kernel_5_10",
     config = "//test/kernel:aya_x86_64.config",
     config_mode = "allnoconfig",
     platform = "@llvm//platforms:linux_x86_64",
-    source = "@aya_linux_6_18_2//:Kconfig",
+    source = "@aya_linux_5_10_270//:Kconfig",
 )
-use_repo(linux_images, "aya_aarch64_kernel_6_18_2", "aya_x86_64_kernel_6_18_2")
+linux_images.image(
+    name = "aya_aarch64_kernel_5_15",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_5_15_221//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_5_15",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_5_15_221//:Kconfig",
+)
+linux_images.image(
+    name = "aya_aarch64_kernel_6_1",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_6_1_188//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_6_1",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_6_1_188//:Kconfig",
+)
+linux_images.image(
+    name = "aya_aarch64_kernel_6_6",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_6_6_157//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_6_6",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_6_6_157//:Kconfig",
+)
+linux_images.image(
+    name = "aya_aarch64_kernel_6_12",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_6_12_110//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_6_12",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_6_12_110//:Kconfig",
+)
+linux_images.image(
+    name = "aya_aarch64_kernel_6_18",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_6_18_52//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_6_18",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_6_18_52//:Kconfig",
+)
+use_repo(
+    linux_images,
+    "aya_aarch64_kernel_5_10",
+    "aya_aarch64_kernel_5_15",
+    "aya_aarch64_kernel_6_1",
+    "aya_aarch64_kernel_6_12",
+    "aya_aarch64_kernel_6_18",
+    "aya_aarch64_kernel_6_6",
+    "aya_x86_64_kernel_5_10",
+    "aya_x86_64_kernel_5_15",
+    "aya_x86_64_kernel_6_1",
+    "aya_x86_64_kernel_6_12",
+    "aya_x86_64_kernel_6_18",
+    "aya_x86_64_kernel_6_6",
+)

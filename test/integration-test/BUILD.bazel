@@ -68,10 +68,19 @@ aya_rust_crate(
 
 [
     aya_integration_vm_test(
-        name = "vm_" + arch,
-        kernel_repo = "@aya_" + arch + "_kernel_6_18_2",
+        name = "vm_" + arch + "_" + line,
+        kernel_repo = "@aya_" + arch + "_kernel_" + line,
         qemu_system_target = arch,
+        tags = ["manual"],
     )
+    for line in [
+        "5_10",
+        "5_15",
+        "6_1",
+        "6_6",
+        "6_12",
+        "6_18",
+    ]
     for arch in [
         "aarch64",
         "x86_64",

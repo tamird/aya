@@ -1,9 +1,9 @@
 # Integration VM kernel configuration
 
 `aya_aarch64.config` and `aya_x86_64.config` are KCONFIG_ALLCONFIG request
-fragments for the Linux 6.18.2 integration VM kernels declared in
-`MODULE.bazel`. `linux.bzl` resolves each fragment from `allnoconfig` using
-the integrity-pinned Linux source archive and the configured LLVM platform.
+fragments for the integration VM kernels declared in `MODULE.bazel`.
+`linux.bzl` resolves each fragment from `allnoconfig` using the
+integrity-pinned Linux source and the configured LLVM platform.
 
 The fragments contain requested values, not complete Linux `.config` files.
 Linux Kconfig adds defaults and values derived through dependencies, `select`,
@@ -21,11 +21,11 @@ From the repository root, resolve both fragments with:
 
 ```console
 $ bazel build --lockfile_mode=error \
-    @aya_aarch64_kernel_6_18_2//:config \
-    @aya_x86_64_kernel_6_18_2//:config
+    @aya_aarch64_kernel_6_18//:config \
+    @aya_x86_64_kernel_6_18//:config
 ```
 
-`bazel cquery --output=files @aya_x86_64_kernel_6_18_2//:config` (or the
+`bazel cquery --output=files @aya_x86_64_kernel_6_18//:config` (or the
 aarch64 label) prints the generated `.config` path. Use
 `--remote_download_outputs=all` with remote execution to read it locally.
 
@@ -33,6 +33,6 @@ After changing either fragment, rebuild both resolved configurations and run:
 
 ```console
 $ bazel test --config=remote --lockfile_mode=error \
-    //test/integration-test:vm_aarch64 \
-    //test/integration-test:vm_x86_64
+    //test/integration-test:vm_aarch64_6_18 \
+    //test/integration-test:vm_x86_64_6_18
 ```

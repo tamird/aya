@@ -8,23 +8,23 @@ exports_files([
 alias(
     name = "aya_kernel",
     actual = select({
-        "@platforms//cpu:aarch64": "@aya_aarch64_kernel_6_18_2//:kernel",
-        "@platforms//cpu:x86_64": "@aya_x86_64_kernel_6_18_2//:kernel",
+        "@platforms//cpu:aarch64": "@aya_aarch64_kernel_6_18//:kernel",
+        "@platforms//cpu:x86_64": "@aya_x86_64_kernel_6_18//:kernel",
     }),
 )
 
 alias(
     name = "aya_kernel_config",
     actual = select({
-        "@platforms//cpu:aarch64": "@aya_aarch64_kernel_6_18_2//:config",
-        "@platforms//cpu:x86_64": "@aya_x86_64_kernel_6_18_2//:config",
+        "@platforms//cpu:aarch64": "@aya_aarch64_kernel_6_18//:config",
+        "@platforms//cpu:x86_64": "@aya_x86_64_kernel_6_18//:config",
     }),
 )
 
 alias(
     name = "aya_kernel_system_map",
     actual = select({
-        "@platforms//cpu:aarch64": "@aya_aarch64_kernel_6_18_2//:system_map",
-        "@platforms//cpu:x86_64": "@aya_x86_64_kernel_6_18_2//:system_map",
+        "@platforms//cpu:aarch64": "@aya_aarch64_kernel_6_18//:system_map",
+        "@platforms//cpu:x86_64": "@aya_x86_64_kernel_6_18//:system_map",
     }),
 )
