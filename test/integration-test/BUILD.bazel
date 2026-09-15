@@ -1,6 +1,8 @@
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:bpf.bzl", "aya_c_bpf_objects")
 load("//bazel:rust.bzl", "aya_rust_crate")
+load(":variants.bzl", "host_arch_filegroup", "opt_filegroup")
 load(":vm.bzl", "aya_integration_vm_test")
 
 # Keep this list synchronized with C_BPF in build.rs. The Boolean requests the
@@ -65,6 +67,42 @@ aya_rust_crate(
     },
     test_binary = True,
 )
+
+opt_filegroup(
+    name = "integration-test-unit-test-opt",
+    srcs = [":integration-test-unit-test"],
+)
+
+host_arch_filegroup(
+    name = "native-fastbuild-binary",
+    srcs = [":integration-test-unit-test"],
+)
+
+host_arch_filegroup(
+    name = "native-opt-binary",
+    srcs = [":integration-test-unit-test-opt"],
+)
+
+[
+    sh_test(
+        name = "native_" + mode,
+        timeout = "long",
+        srcs = ["native.sh"],
+        args = ["$(rootpath :" + binary + ")"],
+        data = [":" + binary],
+        tags = [
+            "exclusive",
+            "external",
+            "local",
+            "manual",
+        ],
+        target_compatible_with = ["@platforms//os:linux"],
+    )
+    for mode, binary in [
+        ("fastbuild", "native-fastbuild-binary"),
+        ("opt", "native-opt-binary"),
+    ]
+]
 
 [
     aya_integration_vm_test(

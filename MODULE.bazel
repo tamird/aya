@@ -22,8 +22,9 @@ bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.20")
 bazel_dep(name = "rules_qemu", version = "0.3.0")
 bazel_dep(name = "rules_rs", version = "0.0.104")
+bazel_dep(name = "rules_shell", version = "0.6.1")
 
-# with_cfg.bzl applies the BPF target settings to Rust and C BPF targets.
+# with_cfg.bzl selects BPF target architectures and the optimized test mode.
 bazel_dep(name = "with_cfg.bzl", version = "0.14.6")
 
 # These hermetic targets are used instead of build scripts below.
@@ -85,11 +86,17 @@ qemu.system_toolchain(
 # Aya registers only qemu_system_toolchains below.
 use_repo(qemu, "qemu_system_toolchains", "qemu_user_toolchains")
 
+# The macOS QEMU toolchain uses the Homebrew installation from the Brewfile.
+homebrew_qemu_repository = use_repo_rule("//bazel:homebrew_qemu.bzl", "homebrew_qemu_repository")
+
+homebrew_qemu_repository(name = "homebrew_qemu")
+
 register_toolchains(
     "@copy_to_directory_toolchains//:all",
     "@default_rust_toolchains//...",
     "@llvm//toolchain:all",
     "@qemu_system_toolchains//:all",
+    "//bazel/toolchains:homebrew_qemu_x86_64",
 )
 
 # Generate Cargo dependencies for every Rust execution and target platform used

@@ -45,6 +45,7 @@ cp "$(@D)/modules/modules.alias" "$@"
         # The integration tests read /boot/config and find System.map-* in /boot.
         executables = {
             "/bin/integration-test-unit-test-bin": ":integration-test-unit-test",
+            "/bin/integration-test-unit-test-opt": ":integration-test-unit-test-opt",
             "/init": "//test-distro:init",
             "/sbin/modprobe": "//test-distro:modprobe",
         },
@@ -65,3 +66,16 @@ cp "$(@D)/modules/modules.alias" "$@"
         qemu_system_target = qemu_system_target,
         tags = tags,
     )
+
+    if qemu_system_target == "x86_64":
+        aya_qemu_vm_test(
+            name = name + "_macos",
+            args = ["--test-threads=1"],
+            exec_compatible_with = ["@platforms//os:macos"],
+            initrd = ":" + initrd,
+            kernel = kernel_repo + "//:kernel",
+            qemu_system_target = qemu_system_target,
+            tags = tags + ["local", "external"],
+            target_compatible_with = ["@platforms//os:macos"],
+            timeout = "long",
+        )
