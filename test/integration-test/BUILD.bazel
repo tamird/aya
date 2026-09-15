@@ -1,4 +1,5 @@
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//rules:select_file.bzl", "select_file")
 load("@linux.bzl", "initramfs")
 load("//bazel:bpf.bzl", "aya_c_bpf_objects")
 load("//bazel:rust.bzl", "aya_rust_crate")
@@ -67,11 +68,32 @@ aya_rust_crate(
     test_binary = True,
 )
 
+select_file(
+    name = "sch_ingress_module",
+    srcs = select({
+        "@platforms//cpu:aarch64": "@aya_aarch64_kernel_6_18_2//:modules",
+        "@platforms//cpu:x86_64": "@aya_x86_64_kernel_6_18_2//:modules",
+    }),
+    subpath = "net/sched/sch_ingress.ko",
+)
+
+genrule(
+    name = "modules_alias",
+    srcs = [":sch_ingress_module"],
+    outs = ["modules.alias"],
+    cmd = """set -euo pipefail
+mkdir -p "$(@D)/modules/kernel/net/sched"
+cp "$(location :sch_ingress_module)" "$(@D)/modules/kernel/net/sched/sch_ingress.ko"
+"$(execpath //test-distro:depmod)" --base-dir "$(@D)/modules"
+cp "$(@D)/modules/modules.alias" "$@"
+""",
+    tools = ["//test-distro:depmod"],
+)
+
 initramfs(
     name = "vm_initramfs",
     # Keep these archive paths synchronized with xtask/src/run.rs::run. The
     # integration tests read /boot/config and the versioned System.map path.
-    directories = ["/lib/modules"],
     executables = {
         "/bin/integration-test-unit-test-bin": ":integration-test-unit-test",
         "/init": "//test-distro:init",
@@ -80,6 +102,8 @@ initramfs(
     files = {
         "/boot/config": "//test/kernel:aya_kernel_config",
         "/boot/System.map-6.18.2": "//test/kernel:aya_kernel_system_map",
+        "/lib/modules/kernel/net/sched/sch_ingress.ko": ":sch_ingress_module",
+        "/lib/modules/modules.alias": ":modules_alias",
     },
 )
 
