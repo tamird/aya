@@ -22,6 +22,7 @@ bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.22")
 bazel_dep(name = "rules_qemu", version = "0.3.0")
 bazel_dep(name = "rules_rs", version = "0.0.107")
+bazel_dep(name = "rules_shell", version = "0.8.0")
 
 # linux.bzl derives its Kbuild compiler and link commands from these LLVM
 # C++ toolchain actions. Bazel requires patches in the root module's tree.
@@ -32,7 +33,7 @@ single_version_override(
     version = "0.8.18",
 )
 
-# with_cfg.bzl applies the BPF target settings to Rust and C BPF targets.
+# with_cfg.bzl selects BPF target architectures and the optimized test mode.
 bazel_dep(name = "with_cfg.bzl", version = "0.14.6")
 
 # These hermetic targets are used instead of build scripts below.
@@ -68,8 +69,8 @@ toolchains.toolchain(
     version = "nightly/2026-09-23",
 )
 
-# Cargo CI uses stable, but Bazel's eBPF targets still require nightly. Expose
-# the stable repository without registering it as a default toolchain.
+# Integration CI selects stable for userspace; bazel/bpf.bzl selects nightly
+# for its eBPF dependencies.
 toolchains.toolchain(
     name = "stable_rust_toolchains",
     edition = "2024",
@@ -94,11 +95,17 @@ qemu.system_toolchain(
 # Aya registers only qemu_system_toolchains below.
 use_repo(qemu, "qemu_system_toolchains", "qemu_user_toolchains")
 
+# macOS VM invocations select the Homebrew QEMU toolchain with --extra_toolchains.
+homebrew_qemu_repository = use_repo_rule("//bazel:homebrew_qemu.bzl", "homebrew_qemu_repository")
+
+homebrew_qemu_repository(name = "homebrew_qemu")
+
 register_toolchains(
     "@copy_to_directory_toolchains//:all",
     "@default_rust_toolchains//...",
     "@llvm//toolchain:all",
     "@qemu_system_toolchains//:all",
+    "@stable_rust_toolchains//...",
 )
 
 # Generate Cargo dependencies for every Rust execution and target platform used
@@ -153,6 +160,54 @@ use_repo(crate, "crates")
 linux_source_repository = use_repo_rule("@linux.bzl//:linux.bzl", "linux_source_repository")
 
 linux_source_repository(
+    name = "aya_linux_5_10_270",
+    integrity = "sha256-3nPVKLBL6R9uuGZgqmek1TuWu/ILtaMm54+ALXRN6+c=",
+    # Linux 5.10 disables Clang's integrated assembler unless requested.
+    # https://github.com/gregkh/linux/blob/1797d8bf8d0c2e74defad605d14e3553d43a3caf/Makefile#L583-L586
+    module_make_vars = {"LLVM_IAS": "1"},
+    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    strip_prefix = "linux-5.10.270",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.10.270.tar.xz"],
+    version = "5.10.270",
+)
+
+linux_source_repository(
+    name = "aya_linux_5_15_221",
+    integrity = "sha256-wHiC4eUo7+IGVnom3jCxktuNxDaZdNTvTOcIaR+hFIw=",
+    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    strip_prefix = "linux-5.15.221",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.15.221.tar.xz"],
+    version = "5.15.221",
+)
+
+linux_source_repository(
+    name = "aya_linux_6_1_188",
+    integrity = "sha256-7U0KyxMHwjUjDInvwJTiEOYpBZP5Sn5hfyixABEBozo=",
+    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    strip_prefix = "linux-6.1.188",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.1.188.tar.xz"],
+    version = "6.1.188",
+)
+
+linux_source_repository(
+    name = "aya_linux_6_6_157",
+    integrity = "sha256-t0pD0GMICbeHHMkGrBVelWy8Cy54p0UfXmyL/LEgjDA=",
+    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    strip_prefix = "linux-6.6.157",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.157.tar.xz"],
+    version = "6.6.157",
+)
+
+linux_source_repository(
+    name = "aya_linux_6_12_110",
+    integrity = "sha256-jO4Z4YObtv9NUlTXYZM65qtnBJLV7QMOCagFODINXEw=",
+    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    strip_prefix = "linux-6.12.110",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.110.tar.xz"],
+    version = "6.12.110",
+)
+
+linux_source_repository(
     name = "aya_linux_6_18_52",
     integrity = "sha256-K2lWT31P6gyFmxlZujNwnubpE5vRAOMKhTtXFZqCIbg=",
     module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
@@ -162,6 +217,76 @@ linux_source_repository(
 )
 
 linux_images = use_extension("@linux.bzl//:extensions.bzl", "linux_images")
+linux_images.image(
+    name = "aya_aarch64_kernel_5_10",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_5_10_270//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_5_10",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_5_10_270//:Kconfig",
+)
+linux_images.image(
+    name = "aya_aarch64_kernel_5_15",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_5_15_221//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_5_15",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_5_15_221//:Kconfig",
+)
+linux_images.image(
+    name = "aya_aarch64_kernel_6_1",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_6_1_188//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_6_1",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_6_1_188//:Kconfig",
+)
+linux_images.image(
+    name = "aya_aarch64_kernel_6_6",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_6_6_157//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_6_6",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_6_6_157//:Kconfig",
+)
+linux_images.image(
+    name = "aya_aarch64_kernel_6_12",
+    config = "//test/kernel:aya_aarch64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_arm64",
+    source = "@aya_linux_6_12_110//:Kconfig",
+)
+linux_images.image(
+    name = "aya_x86_64_kernel_6_12",
+    config = "//test/kernel:aya_x86_64.config",
+    config_mode = "allnoconfig",
+    platform = "@llvm//platforms:linux_x86_64",
+    source = "@aya_linux_6_12_110//:Kconfig",
+)
 linux_images.image(
     name = "aya_aarch64_kernel_6_18",
     config = "//test/kernel:aya_aarch64.config",
@@ -176,4 +301,18 @@ linux_images.image(
     platform = "@llvm//platforms:linux_x86_64",
     source = "@aya_linux_6_18_52//:Kconfig",
 )
-use_repo(linux_images, "aya_aarch64_kernel_6_18", "aya_x86_64_kernel_6_18")
+use_repo(
+    linux_images,
+    "aya_aarch64_kernel_5_10",
+    "aya_aarch64_kernel_5_15",
+    "aya_aarch64_kernel_6_1",
+    "aya_aarch64_kernel_6_12",
+    "aya_aarch64_kernel_6_18",
+    "aya_aarch64_kernel_6_6",
+    "aya_x86_64_kernel_5_10",
+    "aya_x86_64_kernel_5_15",
+    "aya_x86_64_kernel_6_1",
+    "aya_x86_64_kernel_6_12",
+    "aya_x86_64_kernel_6_18",
+    "aya_x86_64_kernel_6_6",
+)
