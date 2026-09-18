@@ -435,12 +435,57 @@
     "@@linux.bzl+//:extensions.bzl%linux_images": {
       "general": {
         "bzlTransitiveDigest": "3NeikY6/Hsxmy2HUgMgj38dleYGuUVREb4sBV6BWRvY=",
-        "usagesDigest": "wcyustDvlvmkdeudMNEFpoqWQdjSCFHXoa7xVvXNxwY=",
+        "usagesDigest": "zWoszkyVr5LN9xCkJeneC+neOzpTInmc9TLRlvgBJt4=",
         "recordedInputs": [
+          "REPO_MAPPING:,aya_linux_5_10_270 +linux_source_repository+aya_linux_5_10_270",
+          "REPO_MAPPING:,aya_linux_5_15_221 +linux_source_repository+aya_linux_5_15_221",
+          "REPO_MAPPING:,aya_linux_6_12_110 +linux_source_repository+aya_linux_6_12_110",
           "REPO_MAPPING:,aya_linux_6_18_52 +linux_source_repository+aya_linux_6_18_52",
+          "REPO_MAPPING:,aya_linux_6_1_188 +linux_source_repository+aya_linux_6_1_188",
+          "REPO_MAPPING:,aya_linux_6_6_157 +linux_source_repository+aya_linux_6_6_157",
           "REPO_MAPPING:,llvm llvm+"
         ],
         "generatedRepoSpecs": {
+          "aya_aarch64_kernel_5_10": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_aarch64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_arm64",
+              "source": "@@+linux_source_repository+aya_linux_5_10_270//:Kconfig"
+            }
+          },
+          "aya_aarch64_kernel_5_15": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_aarch64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_arm64",
+              "source": "@@+linux_source_repository+aya_linux_5_15_221//:Kconfig"
+            }
+          },
+          "aya_aarch64_kernel_6_1": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_aarch64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_arm64",
+              "source": "@@+linux_source_repository+aya_linux_6_1_188//:Kconfig"
+            }
+          },
+          "aya_aarch64_kernel_6_12": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_aarch64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_arm64",
+              "source": "@@+linux_source_repository+aya_linux_6_12_110//:Kconfig"
+            }
+          },
           "aya_aarch64_kernel_6_18": {
             "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
             "attributes": {
@@ -451,6 +496,56 @@
               "source": "@@+linux_source_repository+aya_linux_6_18_52//:Kconfig"
             }
           },
+          "aya_aarch64_kernel_6_6": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_aarch64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_arm64",
+              "source": "@@+linux_source_repository+aya_linux_6_6_157//:Kconfig"
+            }
+          },
+          "aya_x86_64_kernel_5_10": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_x86_64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_x86_64",
+              "source": "@@+linux_source_repository+aya_linux_5_10_270//:Kconfig"
+            }
+          },
+          "aya_x86_64_kernel_5_15": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_x86_64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_x86_64",
+              "source": "@@+linux_source_repository+aya_linux_5_15_221//:Kconfig"
+            }
+          },
+          "aya_x86_64_kernel_6_1": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_x86_64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_x86_64",
+              "source": "@@+linux_source_repository+aya_linux_6_1_188//:Kconfig"
+            }
+          },
+          "aya_x86_64_kernel_6_12": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_x86_64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_x86_64",
+              "source": "@@+linux_source_repository+aya_linux_6_12_110//:Kconfig"
+            }
+          },
           "aya_x86_64_kernel_6_18": {
             "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
             "attributes": {
@@ -459,6 +554,16 @@
               "overlays": {},
               "platform": "@@llvm+//platforms:linux_x86_64",
               "source": "@@+linux_source_repository+aya_linux_6_18_52//:Kconfig"
+            }
+          },
+          "aya_x86_64_kernel_6_6": {
+            "repoRuleId": "@@linux.bzl+//internal:linux_image_repository.bzl%linux_image",
+            "attributes": {
+              "config": "@@//test/kernel:aya_x86_64.config",
+              "config_mode": "allnoconfig",
+              "overlays": {},
+              "platform": "@@llvm+//platforms:linux_x86_64",
+              "source": "@@+linux_source_repository+aya_linux_6_6_157//:Kconfig"
             }
           }
         }
