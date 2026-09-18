@@ -1,5 +1,10 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 
+exports_files(
+    ["llvm_kbuild_actions.patch"],
+    visibility = ["//visibility:public"],
+)
+
 string_flag(
     name = "bpf_target_arch",
     build_setting_default = "x86_64",
