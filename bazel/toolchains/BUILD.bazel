@@ -1,3 +1,5 @@
+load("@rules_qemu//qemu:qemu_system_toolchain.bzl", "qemu_system_toolchain")
+
 platform(
     name = "rbe_x86_64_linux",
     constraint_values = [
@@ -14,5 +16,20 @@ platform(
         # This digest pins ubuntu:24.04.
         "container-image": "docker://ubuntu@sha256:023f8a753c22258c9fe2d0005a7d28258038da7d620e9f93e9ad78aa266f9f11",
     },
+    visibility = ["//visibility:public"],
+)
+
+# rules_qemu's pinned QEMU prebuilts support Linux hosts; macOS runs the QEMU
+# installation declared by //:Brewfile. Both use the same QEMU toolchain type.
+qemu_system_toolchain(
+    name = "homebrew_qemu_x86_64_impl",
+    machine = "q35",
+    qemu_img = "@homebrew_qemu//:bin/qemu-img",
+    qemu_system = "@homebrew_qemu//:bin/qemu-system-x86_64",
+    system_data = "@homebrew_qemu//:system_data",
+    system_data_anchor = "@homebrew_qemu//:share/qemu",
+    system_target = "x86_64-softmmu",
+    tags = ["manual"],
+    target_arch = "x86_64",
     visibility = ["//visibility:public"],
 )
