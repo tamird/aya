@@ -3,11 +3,11 @@
 //! This implementation is incredibly naive and is only designed to work within
 //! the constraints of the test environment. Not for production use.
 
-use std::{fs::File, io::BufRead as _, path::Path};
+use std::{borrow::Cow, ffi::OsStr, fs::File, io::BufRead, path::Path};
 
 use anyhow::{Context as _, anyhow, bail};
 use clap::Parser;
-use glob::glob;
+use glob::{Pattern, glob};
 use nix::kmod::init_module;
 use test_distro::{Compression, read_to_end, resolve_modules_dir};
 
@@ -41,14 +41,23 @@ fn try_main(quiet: bool, name: String) -> anyhow::Result<()> {
     let modules_dir = resolve_modules_dir()?;
 
     output!(quiet, "resolving alias for module: {}", name);
-    let module = resolve_alias(quiet, &modules_dir, &name)?;
+    let modules_alias = modules_dir.join("modules.alias");
+    output!(
+        quiet,
+        "opening modules.alias file: {}",
+        modules_alias.display()
+    );
+    let alias_file = File::open(&modules_alias)
+        .with_context(|| format!("open(): {}", modules_alias.display()))?;
+    let alias_file = std::io::BufReader::new(alias_file);
+    let module = resolve_alias(alias_file, &name)?;
 
     let pattern = format!(
         "{}/kernel/**/{}.ko*",
         modules_dir
             .to_str()
             .ok_or_else(|| anyhow!("failed to convert {} to string", modules_dir.display()))?,
-        module
+        Pattern::escape(&module)
     );
     let module_path = glob(&pattern)
         .with_context(|| format!("failed to glob: {pattern}"))?
@@ -90,27 +99,22 @@ fn try_main(quiet: bool, name: String) -> anyhow::Result<()> {
     }
 }
 
-fn resolve_alias(quiet: bool, module_dir: &Path, name: &str) -> anyhow::Result<String> {
-    let modules_alias = module_dir.join("modules.alias");
-    output!(
-        quiet,
-        "opening modules.alias file: {}",
-        modules_alias.display()
-    );
-    let alias_file = File::open(&modules_alias)
-        .with_context(|| format!("open(): {}", modules_alias.display()))?;
-    let alias_file = std::io::BufReader::new(alias_file);
-
+fn resolve_alias(alias_file: impl BufRead, name: &str) -> anyhow::Result<Cow<'_, str>> {
     for line in alias_file.lines() {
         let line = line?;
         let Some((alias, module)) = parse_alias_line(&line)? else {
             continue;
         };
         if alias == name {
-            return Ok(module.to_string());
+            return Ok(Cow::Owned(module.to_owned()));
         }
     }
-    bail!("alias not found: {name}")
+    // Module names need not have an entry in modules.alias.
+    // The caller still requires an installed module with this exact name.
+    if Path::new(name).file_name() != Some(OsStr::new(name)) {
+        bail!("invalid module name: {name}");
+    }
+    Ok(Cow::Borrowed(name))
 }
 
 fn parse_alias_line(line: &str) -> anyhow::Result<Option<(&str, &str)>> {
@@ -130,7 +134,31 @@ fn parse_alias_line(line: &str) -> anyhow::Result<Option<(&str, &str)>> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_alias_line;
+    use std::borrow::Cow;
+
+    use assert_matches::assert_matches;
+
+    use super::{parse_alias_line, resolve_alias};
+
+    #[test]
+    fn resolve_alias_accepts_aliases_and_module_names() {
+        let aliases: &[u8] = b"alias net-sch-clsact sch_ingress\n";
+        assert_matches!(resolve_alias(aliases, "net-sch-clsact").unwrap(), Cow::Owned(module) => {
+            assert_eq!(module, "sch_ingress");
+        });
+        assert_matches!(
+            resolve_alias(aliases, "cls_bpf").unwrap(),
+            Cow::Borrowed("cls_bpf")
+        );
+    }
+
+    #[test]
+    fn resolve_alias_rejects_paths_as_module_names() {
+        for name in ["", ".", "..", "../cls_bpf", "net/cls_bpf"] {
+            let error = resolve_alias(&b""[..], name).unwrap_err();
+            assert_eq!(error.to_string(), format!("invalid module name: {name}"));
+        }
+    }
 
     #[test]
     fn parse_alias_line_allows_spaces_in_alias() {
@@ -140,15 +168,5 @@ mod tests {
 
         assert_eq!(alias, "mt8195_mt6359 soc card");
         assert_eq!(module, "mt8195-mt6359");
-    }
-
-    #[test]
-    fn parse_alias_line_reads_regular_alias() {
-        let (alias, module) = parse_alias_line("alias net-sch-clsact sch_ingress")
-            .unwrap()
-            .unwrap();
-
-        assert_eq!(alias, "net-sch-clsact");
-        assert_eq!(module, "sch_ingress");
     }
 }
