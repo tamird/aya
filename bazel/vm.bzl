@@ -1,11 +1,28 @@
-"""Hermetic VM helpers for integration tests."""
+"""VM helpers for integration tests."""
 
 _QEMU_SYSTEM_TOOLCHAIN_TYPE = "@rules_qemu//qemu:exec_toolchain_type"
 
-# Keep the QEMU settings and result protocol synchronized with
-# xtask/src/run.rs::run. Bazel cannot invoke that Cargo runner because this rule
-# must execute the configured QEMU toolchain with the transitioned kernel and
-# initramfs as declared runfiles.
+# Verify that the resolved configuration enables the features the tests require.
+_REQUIRED_KERNEL_CONFIG = [
+    "CONFIG_BPF_LSM=y",
+    "CONFIG_DEBUG_INFO_BTF=y",
+    "CONFIG_EPOLL=y",
+    "CONFIG_MULTIUSER=y",
+    "CONFIG_NAMESPACES=y",
+    "CONFIG_NET_CLS_BPF=y",
+    "CONFIG_NET_NS=y",
+    "CONFIG_NET_SCH_INGRESS=m",
+    "CONFIG_SECURITY=y",
+    "CONFIG_SECURITY_NETWORK=y",
+    "CONFIG_SHMEM=y",
+    "CONFIG_TMPFS=y",
+    "CONFIG_USER_NS=y",
+    "CONFIG_XDP_SOCKETS=y",
+]
+
+# Keep kernel command lines and the result protocol aligned with
+# xtask/src/run.rs::run. Run QEMU with Bazel's configured toolchain and
+# the transitioned kernel and initramfs as declared runfiles.
 _GUESTS = {
     "aarch64": struct(
         cpu = "max",
@@ -52,6 +69,7 @@ def _rootpath(file, workspace_name):
     return workspace_name + "/" + short_path
 
 def _aya_qemu_vm_test_impl(ctx):
+    config = ctx.file.config
     kernel = ctx.file.kernel
     initrd = ctx.file.initrd
     qemu = ctx.toolchains[_QEMU_SYSTEM_TOOLCHAIN_TYPE]
@@ -65,9 +83,6 @@ def _aya_qemu_vm_test_impl(ctx):
         guest.cpu,
         "-accel",
         "kvm",
-        # TODO(https://github.com/hermeticbuild/qemu-prebuilt/issues/4): Bump
-        # rules_qemu to a qemu-prebuilt release with macOS host artifacts so
-        # local macOS VM tests can use HVF.
         "-accel",
         "hvf",
         "-accel",
@@ -93,8 +108,16 @@ set -euo pipefail
 
 qemu="${{TEST_SRCDIR}}/{qemu}"
 qemu_data_dir="${{TEST_SRCDIR}}/{qemu_data_dir}"
+config="${{TEST_SRCDIR}}/{config}"
 kernel="${{TEST_SRCDIR}}/{kernel}"
 initrd="${{TEST_SRCDIR}}/{initrd}"
+
+for setting in {required_config}; do
+  if ! grep -Fxq "${{setting}}" "${{config}}"; then
+    echo "required kernel setting ${{setting}} is absent from ${{config}}" >&2
+    exit 1
+  fi
+done
 
 kernel_args="{kernel_args}"
 for arg in "$@"; do
@@ -198,6 +221,7 @@ case "${{outcome}}" in
     ;;
 esac
 """.format(
+            config = _rootpath(config, ctx.workspace_name),
             initrd = _rootpath(initrd, ctx.workspace_name),
             kernel = _rootpath(kernel, ctx.workspace_name),
             kernel_args = guest.kernel_args,
@@ -205,12 +229,14 @@ esac
             qemu = _rootpath(qemu.qemu_system, ctx.workspace_name),
             qemu_args = " ".join(qemu_args),
             qemu_data_dir = _rootpath(qemu.system_data_anchor, ctx.workspace_name),
+            required_config = " ".join(_REQUIRED_KERNEL_CONFIG),
         ),
     )
 
     runfiles = ctx.runfiles(files = [
         qemu.qemu_system,
         qemu.system_data_anchor,
+        config,
         kernel,
         initrd,
     ], transitive_files = qemu.system_data_files)
@@ -219,6 +245,11 @@ esac
 aya_qemu_vm_test = rule(
     implementation = _aya_qemu_vm_test_impl,
     attrs = {
+        "config": attr.label(
+            allow_single_file = True,
+            cfg = _guest_platform_transition,
+            mandatory = True,
+        ),
         "kernel": attr.label(
             allow_single_file = True,
             cfg = _guest_platform_transition,
