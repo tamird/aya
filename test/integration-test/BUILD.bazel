@@ -115,8 +115,11 @@ host_arch_filegroup(
 [
     aya_integration_vm_test(
         name = "vm_" + arch + "_" + line,
-        kernel_repo = "@aya_" + arch + "_kernel_" + line,
+        config = "@aya_" + arch + "_kernel_" + line + "//:config",
+        ingress = "@aya_" + arch + "_kernel_" + line + "//:sch_ingress",
+        kernel = "@aya_" + arch + "_kernel_" + line + "//:kernel",
         qemu_system_target = arch,
+        system_map = "@aya_" + arch + "_kernel_" + line + "//:system_map",
         tags = ["manual"],
     )
     for line in [
