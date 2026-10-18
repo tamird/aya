@@ -5,7 +5,7 @@ module(
 
 bazel_dep(name = "aspect_rules_lint", version = "2.7.2", dev_dependency = True)
 
-bazel_dep(name = "bazel_lib", version = "3.2.2")
+bazel_dep(name = "bazel_lib", version = "3.7.2")
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
 
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.3", dev_dependency = True)
@@ -17,20 +17,44 @@ bazel_dep(name = "linux.bzl", version = "0.0.0")
 bazel_dep(name = "libbpf", version = "1.7.0")
 
 # The LLVM toolchain compiles C BPF objects and the integration VM kernels.
-bazel_dep(name = "llvm", version = "0.8.18")
+bazel_dep(name = "llvm", version = "0.8.24")
 bazel_dep(name = "platforms", version = "1.1.0")
-bazel_dep(name = "rules_cc", version = "0.2.22")
+bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_qemu", version = "0.3.0")
 bazel_dep(name = "rules_rs", version = "0.0.107")
 bazel_dep(name = "rules_shell", version = "0.8.0")
 
-# linux.bzl derives its Kbuild compiler and link commands from these LLVM
-# C++ toolchain actions. Bazel requires patches in the root module's tree.
+# Generated kernel repositories use these declared libraries and BTF encoder.
+bazel_dep(name = "elfutils", version = "0.195")
+bazel_dep(name = "pahole", version = "1.31")
+
+# Bazel requires dependency patches in the root module's tree.
+# Bison's runfiles helper calls getenv without including its declaring header.
 single_version_override(
-    module_name = "llvm",
+    module_name = "rules_bison",
     patch_strip = 1,
-    patches = ["//bazel:llvm_kbuild_actions.patch"],
-    version = "0.8.18",
+    patches = ["//bazel:rules_bison_cstdlib.patch"],
+    version = "0.4.bcr.1",
+)
+
+# Accept Clang bitcode as an input to the kernel's backend compiler action.
+single_version_override(
+    module_name = "rules_cc",
+    patch_strip = 1,
+    patches = ["//bazel:rules_cc_ir.patch"],
+    version = "0.2.25",
+)
+
+# Configure probes execute declared tool arguments directly. Their serialized
+# compiler paths must remain unmapped until the dependency maps its JSON too.
+single_version_override(
+    module_name = "rules_cc_autoconf",
+    patch_strip = 1,
+    patches = [
+        "//bazel:rules_cc_autoconf_no_host_shell.patch",
+        "//bazel:rules_cc_autoconf_no_path_mapping.patch",
+    ],
+    version = "0.27.0",
 )
 
 # with_cfg.bzl selects BPF target architectures and the optimized test mode.
@@ -45,13 +69,18 @@ bazel_lib_toolchains = use_extension("@bazel_lib//lib:extensions.bzl", "toolchai
 bazel_lib_toolchains.copy_to_directory()
 use_repo(bazel_lib_toolchains, "copy_to_directory_toolchains")
 
-# Pin the linux.bzl revision with source-built images for all VM architectures.
+# Pin the static kernel rules and their source parser.
 archive_override(
     module_name = "linux.bzl",
-    integrity = "sha256-SyZi9taOQvRIY4VQ6KPAlziTRdKNXDCrLpr3JcyuGiI=",
-    strip_prefix = "linux.bzl-104b9651dcc62005882676a88454e0e69eebf2f7",
-    urls = ["https://github.com/tamird/linux.bzl/archive/104b9651dcc62005882676a88454e0e69eebf2f7.tar.gz"],
+    integrity = "sha256-bLLmFuBrgg2NYuMSy5OlC8myb4N1JbcovwUGorXcX9o=",
+    strip_prefix = "linux.bzl-316e3ba7b7b2769fe49830d55206dd729120cc49",
+    urls = ["https://github.com/tamird/linux.bzl/archive/316e3ba7b7b2769fe49830d55206dd729120cc49.tar.gz"],
 )
+
+# Compiler metadata and execution tools are shared by all kernel repositories.
+kernel_compiler_versions = use_repo_rule("@linux.bzl//metadata:repositories.bzl", "llvm_compiler_versions")
+
+kernel_compiler_versions(name = "kernel_llvm_versions")
 
 # @rules_rs creates @rules_rust here; generated BUILD files and .bazelrc labels
 # reference @rules_rust directly.
@@ -103,6 +132,7 @@ homebrew_qemu_repository(name = "homebrew_qemu")
 register_toolchains(
     "@copy_to_directory_toolchains//:all",
     "@default_rust_toolchains//...",
+    "@linux.bzl//execution_tools:linux_x86_64",
     "@llvm//toolchain:all",
     "@qemu_system_toolchains//:all",
     "@stable_rust_toolchains//...",
@@ -157,162 +187,157 @@ exports_files(
 )
 use_repo(crate, "crates")
 
-linux_source_repository = use_repo_rule("@linux.bzl//:linux.bzl", "linux_source_repository")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-linux_source_repository(
+http_archive(
     name = "aya_linux_5_10_270",
+    build_file_content = 'exports_files(["Makefile"])',
     integrity = "sha256-3nPVKLBL6R9uuGZgqmek1TuWu/ILtaMm54+ALXRN6+c=",
-    # Linux 5.10 disables Clang's integrated assembler unless requested.
-    # https://github.com/gregkh/linux/blob/1797d8bf8d0c2e74defad605d14e3553d43a3caf/Makefile#L583-L586
-    module_make_vars = {"LLVM_IAS": "1"},
-    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    patch_args = ["-p1"],
+    patches = [
+        "@linux.bzl//native:linux_piggy_dependency.patch",
+        "@linux.bzl//native:linux_5_10_resolve_btfids.patch",
+    ],
     strip_prefix = "linux-5.10.270",
     urls = ["https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.10.270.tar.xz"],
-    version = "5.10.270",
 )
 
-linux_source_repository(
+http_archive(
     name = "aya_linux_5_15_221",
+    build_file_content = 'exports_files(["Makefile"])',
     integrity = "sha256-wHiC4eUo7+IGVnom3jCxktuNxDaZdNTvTOcIaR+hFIw=",
-    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    patch_args = ["-p1"],
+    patches = [
+        "@linux.bzl//native:linux_piggy_dependency.patch",
+        "@linux.bzl//native:linux_5_15_resolve_btfids.patch",
+    ],
     strip_prefix = "linux-5.15.221",
     urls = ["https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.15.221.tar.xz"],
-    version = "5.15.221",
 )
 
-linux_source_repository(
+http_archive(
     name = "aya_linux_6_1_188",
+    build_file_content = 'exports_files(["Makefile"])',
     integrity = "sha256-7U0KyxMHwjUjDInvwJTiEOYpBZP5Sn5hfyixABEBozo=",
-    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    patch_args = ["-p1"],
+    patches = ["@linux.bzl//native:linux_piggy_dependency.patch"],
     strip_prefix = "linux-6.1.188",
     urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.1.188.tar.xz"],
-    version = "6.1.188",
 )
 
-linux_source_repository(
+http_archive(
     name = "aya_linux_6_6_157",
+    build_file_content = 'exports_files(["Makefile"])',
     integrity = "sha256-t0pD0GMICbeHHMkGrBVelWy8Cy54p0UfXmyL/LEgjDA=",
-    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    patch_args = ["-p1"],
+    patches = ["@linux.bzl//native:linux_piggy_dependency.patch"],
     strip_prefix = "linux-6.6.157",
     urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.157.tar.xz"],
-    version = "6.6.157",
 )
 
-linux_source_repository(
+http_archive(
     name = "aya_linux_6_12_110",
+    build_file_content = 'exports_files(["Makefile"])',
     integrity = "sha256-jO4Z4YObtv9NUlTXYZM65qtnBJLV7QMOCagFODINXEw=",
-    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    patch_args = ["-p1"],
+    patches = ["@linux.bzl//native:linux_piggy_dependency.patch"],
     strip_prefix = "linux-6.12.110",
     urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.110.tar.xz"],
-    version = "6.12.110",
 )
 
-linux_source_repository(
+http_archive(
     name = "aya_linux_6_18_52",
+    build_file_content = 'exports_files(["Makefile"])',
     integrity = "sha256-K2lWT31P6gyFmxlZujNwnubpE5vRAOMKhTtXFZqCIbg=",
-    module_targets = {"sch_ingress": "net/sched/sch_ingress.ko"},
+    patch_args = ["-p1"],
+    patches = ["@linux.bzl//native:linux_piggy_dependency.patch"],
     strip_prefix = "linux-6.18.52",
     urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.52.tar.xz"],
-    version = "6.18.52",
 )
 
-linux_images = use_extension("@linux.bzl//:extensions.bzl", "linux_images")
-linux_images.image(
-    name = "aya_aarch64_kernel_5_10",
-    config = "//test/kernel:aya_aarch64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_arm64",
-    source = "@aya_linux_5_10_270//:Kconfig",
+kernel_repository_tool = use_repo_rule("@linux.bzl//:repository.bzl", "kernel_repository_tool")
+
+kernel_repository = use_repo_rule("@linux.bzl//:repository.bzl", "kernel_repository")
+
+kernel_config_fragments = [
+    "//test/kernel:aya_aarch64.config",
+    "//test/kernel:aya_x86_64.config",
+]
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_5_10",
+    manifest = "//test/kernel:generator_5_10.json",
 )
-linux_images.image(
-    name = "aya_x86_64_kernel_5_10",
-    config = "//test/kernel:aya_x86_64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_x86_64",
-    source = "@aya_linux_5_10_270//:Kconfig",
+
+kernel_repository(
+    name = "aya_kernel_5_10",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_5_10//:kernel-repository",
+    source = "@aya_linux_5_10_270//:Makefile",
 )
-linux_images.image(
-    name = "aya_aarch64_kernel_5_15",
-    config = "//test/kernel:aya_aarch64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_arm64",
-    source = "@aya_linux_5_15_221//:Kconfig",
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_5_15",
+    manifest = "//test/kernel:generator_5_15.json",
 )
-linux_images.image(
-    name = "aya_x86_64_kernel_5_15",
-    config = "//test/kernel:aya_x86_64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_x86_64",
-    source = "@aya_linux_5_15_221//:Kconfig",
+
+kernel_repository(
+    name = "aya_kernel_5_15",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_5_15//:kernel-repository",
+    source = "@aya_linux_5_15_221//:Makefile",
 )
-linux_images.image(
-    name = "aya_aarch64_kernel_6_1",
-    config = "//test/kernel:aya_aarch64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_arm64",
-    source = "@aya_linux_6_1_188//:Kconfig",
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_6_1",
+    manifest = "//test/kernel:generator_6_1.json",
 )
-linux_images.image(
-    name = "aya_x86_64_kernel_6_1",
-    config = "//test/kernel:aya_x86_64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_x86_64",
-    source = "@aya_linux_6_1_188//:Kconfig",
+
+kernel_repository(
+    name = "aya_kernel_6_1",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_6_1//:kernel-repository",
+    source = "@aya_linux_6_1_188//:Makefile",
 )
-linux_images.image(
-    name = "aya_aarch64_kernel_6_6",
-    config = "//test/kernel:aya_aarch64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_arm64",
-    source = "@aya_linux_6_6_157//:Kconfig",
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_6_6",
+    manifest = "//test/kernel:generator_6_6.json",
 )
-linux_images.image(
-    name = "aya_x86_64_kernel_6_6",
-    config = "//test/kernel:aya_x86_64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_x86_64",
-    source = "@aya_linux_6_6_157//:Kconfig",
+
+kernel_repository(
+    name = "aya_kernel_6_6",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_6_6//:kernel-repository",
+    source = "@aya_linux_6_6_157//:Makefile",
 )
-linux_images.image(
-    name = "aya_aarch64_kernel_6_12",
-    config = "//test/kernel:aya_aarch64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_arm64",
-    source = "@aya_linux_6_12_110//:Kconfig",
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_6_12",
+    manifest = "//test/kernel:generator_6_12.json",
 )
-linux_images.image(
-    name = "aya_x86_64_kernel_6_12",
-    config = "//test/kernel:aya_x86_64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_x86_64",
-    source = "@aya_linux_6_12_110//:Kconfig",
+
+kernel_repository(
+    name = "aya_kernel_6_12",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_6_12//:kernel-repository",
+    source = "@aya_linux_6_12_110//:Makefile",
 )
-linux_images.image(
-    name = "aya_aarch64_kernel_6_18",
-    config = "//test/kernel:aya_aarch64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_arm64",
-    source = "@aya_linux_6_18_52//:Kconfig",
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_6_18",
+    manifest = "//test/kernel:generator_6_18.json",
 )
-linux_images.image(
-    name = "aya_x86_64_kernel_6_18",
-    config = "//test/kernel:aya_x86_64.config",
-    config_mode = "allnoconfig",
-    platform = "@llvm//platforms:linux_x86_64",
-    source = "@aya_linux_6_18_52//:Kconfig",
-)
-use_repo(
-    linux_images,
-    "aya_aarch64_kernel_5_10",
-    "aya_aarch64_kernel_5_15",
-    "aya_aarch64_kernel_6_1",
-    "aya_aarch64_kernel_6_12",
-    "aya_aarch64_kernel_6_18",
-    "aya_aarch64_kernel_6_6",
-    "aya_x86_64_kernel_5_10",
-    "aya_x86_64_kernel_5_15",
-    "aya_x86_64_kernel_6_1",
-    "aya_x86_64_kernel_6_12",
-    "aya_x86_64_kernel_6_18",
-    "aya_x86_64_kernel_6_6",
+
+kernel_repository(
+    name = "aya_kernel_6_18",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_6_18//:kernel-repository",
+    source = "@aya_linux_6_18_52//:Makefile",
 )

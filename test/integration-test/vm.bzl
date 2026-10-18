@@ -61,7 +61,6 @@ cp "$(@D)/modules/modules.alias" "$@"
         name = name,
         timeout = "long",
         args = ["--test-threads=1"],
-        config = config,
         initrd = ":" + initrd,
         kernel = kernel,
         qemu_system_target = qemu_system_target,
@@ -72,7 +71,6 @@ cp "$(@D)/modules/modules.alias" "$@"
         aya_qemu_vm_test(
             name = name + "_macos",
             args = ["--test-threads=1"],
-            config = config,
             exec_compatible_with = ["@platforms//os:macos"],
             initrd = ":" + initrd,
             kernel = kernel,
