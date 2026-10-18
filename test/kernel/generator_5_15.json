@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "platforms": {
+    "linux_x86_64": {
+      "url": "https://github.com/tamird/linux.bzl/releases/download/kernel-repository-316e3ba7b7b2769fe49830d55206dd729120cc49-linux-x86_64/kernel-repository-linux-5.15-linux-x86_64.tar.gz",
+      "integrity": "sha256-K7SOhb1N0dZ5LtyzNcUysBJLgilJ9x7f4lGw5A/NqOM="
+    },
+    "macos_aarch64": {
+      "url": "https://github.com/tamird/linux.bzl/releases/download/kernel-repository-316e3ba7b7b2769fe49830d55206dd729120cc49-macos-aarch64/kernel-repository-linux-5.15-macos-aarch64.tar.gz",
+      "integrity": "sha256-+aLHten2ylBa6h+8ymeNuByxQqr9mnHV/+5PdWhZILQ="
+    }
+  }
+}

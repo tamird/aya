@@ -1,0 +1,16 @@
+load("@aya//test/kernel:kernel.bzl", "aya_kernel")
+load("//rules:config_parity.bzl", "kernel_config_parity_test")
+load("//rules:example_configs.bzl", "EXAMPLE_CONFIGS")
+load("//rules:image.bzl", "kbuild_resolved_build", "kernel_artifact")
+load("//rules:rules.bzl", "kernel_config")
+
+package(default_visibility = ["//visibility:public"])
+
+aya_kernel(
+    name = "kernel",
+    artifact_rule = kernel_artifact,
+    build_rule = kbuild_resolved_build,
+    config_parity_test = kernel_config_parity_test,
+    config_rule = kernel_config,
+    fragments = EXAMPLE_CONFIGS,
+)

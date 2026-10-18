@@ -5,28 +5,59 @@ module(
 
 bazel_dep(name = "aspect_rules_lint", version = "2.7.2", dev_dependency = True)
 
-bazel_dep(name = "bazel_lib", version = "3.2.2")
+bazel_dep(name = "bazel_lib", version = "3.7.2")
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
 
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.3", dev_dependency = True)
 
-# The archive_override below supplies the exact unpublished linux.bzl revision.
+# The archive_override below pins the exact linux.bzl revision.
 bazel_dep(name = "linux.bzl", version = "0.0.0")
 
 # libbpf supplies headers and libraries for the C BPF integration-test objects.
 bazel_dep(name = "libbpf", version = "1.7.0")
 
 # The LLVM toolchain compiles C BPF objects and the integration VM kernels.
-bazel_dep(name = "llvm", version = "0.8.9")
-
-# CONFIG_DEBUG_INFO_BTF requires pahole when linking the integration VM kernels.
-bazel_dep(name = "pahole", version = "1.31")
+bazel_dep(name = "llvm", version = "0.8.24")
 bazel_dep(name = "platforms", version = "1.1.0")
-bazel_dep(name = "rules_cc", version = "0.2.19")
+bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_qemu", version = "0.3.0")
-bazel_dep(name = "rules_rs", version = "0.0.104")
+bazel_dep(name = "rules_rs", version = "0.0.107")
+bazel_dep(name = "rules_shell", version = "0.8.0")
 
-# with_cfg.bzl applies the BPF target settings to Rust and C BPF targets.
+# Generated kernel repositories use these declared libraries and BTF encoder.
+bazel_dep(name = "elfutils", version = "0.195")
+bazel_dep(name = "pahole", version = "1.31")
+
+# Bazel requires dependency patches in the root module's tree.
+# Bison's runfiles helper calls getenv without including its declaring header.
+single_version_override(
+    module_name = "rules_bison",
+    patch_strip = 1,
+    patches = ["//bazel:rules_bison_cstdlib.patch"],
+    version = "0.4.bcr.1",
+)
+
+# Accept Clang bitcode as an input to the kernel's backend compiler action.
+single_version_override(
+    module_name = "rules_cc",
+    patch_strip = 1,
+    patches = ["//bazel:rules_cc_ir.patch"],
+    version = "0.2.25",
+)
+
+# Configure probes execute declared tool arguments directly. Their serialized
+# compiler paths must remain unmapped until the dependency maps its JSON too.
+single_version_override(
+    module_name = "rules_cc_autoconf",
+    patch_strip = 1,
+    patches = [
+        "//bazel:rules_cc_autoconf_no_host_shell.patch",
+        "//bazel:rules_cc_autoconf_no_path_mapping.patch",
+    ],
+    version = "0.27.0",
+)
+
+# with_cfg.bzl selects BPF target architectures and the optimized test mode.
 bazel_dep(name = "with_cfg.bzl", version = "0.14.6")
 
 # These hermetic targets are used instead of build scripts below.
@@ -38,13 +69,18 @@ bazel_lib_toolchains = use_extension("@bazel_lib//lib:extensions.bzl", "toolchai
 bazel_lib_toolchains.copy_to_directory()
 use_repo(bazel_lib_toolchains, "copy_to_directory_toolchains")
 
-# Pin the linux.bzl revision that provides the deterministic C initramfs rule.
+# Pin the static kernel rules and their source parser.
 archive_override(
     module_name = "linux.bzl",
-    integrity = "sha256-2gveHVEG4EE5x3N4kDnUftB7ed/6RRFslFwDquObqRg=",
-    strip_prefix = "linux.bzl-e18628f3e177022c2ff0cf93a2e5f2d408f7d2fc",
-    urls = ["https://github.com/hermeticbuild/linux.bzl/archive/e18628f3e177022c2ff0cf93a2e5f2d408f7d2fc.tar.gz"],
+    integrity = "sha256-bLLmFuBrgg2NYuMSy5OlC8myb4N1JbcovwUGorXcX9o=",
+    strip_prefix = "linux.bzl-316e3ba7b7b2769fe49830d55206dd729120cc49",
+    urls = ["https://github.com/tamird/linux.bzl/archive/316e3ba7b7b2769fe49830d55206dd729120cc49.tar.gz"],
 )
+
+# Compiler metadata and execution tools are shared by all kernel repositories.
+kernel_compiler_versions = use_repo_rule("@linux.bzl//metadata:repositories.bzl", "llvm_compiler_versions")
+
+kernel_compiler_versions(name = "kernel_llvm_versions")
 
 # @rules_rs creates @rules_rust here; generated BUILD files and .bazelrc labels
 # reference @rules_rust directly.
@@ -62,8 +98,8 @@ toolchains.toolchain(
     version = "nightly/2026-10-17",
 )
 
-# Cargo CI uses stable, but Bazel's eBPF targets still require nightly. Expose
-# the stable repository without registering it as a default toolchain.
+# Integration CI selects stable for userspace; bazel/bpf.bzl selects nightly
+# for its eBPF dependencies.
 toolchains.toolchain(
     name = "stable_rust_toolchains",
     edition = "2024",
@@ -88,11 +124,18 @@ qemu.system_toolchain(
 # Aya registers only qemu_system_toolchains below.
 use_repo(qemu, "qemu_system_toolchains", "qemu_user_toolchains")
 
+# macOS VM invocations select the Homebrew QEMU toolchain with --extra_toolchains.
+homebrew_qemu_repository = use_repo_rule("//bazel:homebrew_qemu.bzl", "homebrew_qemu_repository")
+
+homebrew_qemu_repository(name = "homebrew_qemu")
+
 register_toolchains(
     "@copy_to_directory_toolchains//:all",
     "@default_rust_toolchains//...",
+    "@linux.bzl//execution_tools:linux_x86_64",
     "@llvm//toolchain:all",
     "@qemu_system_toolchains//:all",
+    "@stable_rust_toolchains//...",
 )
 
 # Generate Cargo dependencies for every Rust execution and target platform used
@@ -144,57 +187,157 @@ exports_files(
 )
 use_repo(crate, "crates")
 
-# Use one integrity-pinned Linux source archive for both integration VM
-# architectures.
-linux_kernel = use_extension("@linux.bzl//:linux.bzl", "linux_kernel")
-linux_kernel.archive(
-    name = "aya_linux_6_18_2",
-    integrity = "sha256-VYxrurdJSSs0+Zgn/oB7ADmnRGk8IdOn4Ds6SO2quWo=",
-    strip_prefix = "linux-6.18.2",
-    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.2.tar.xz"],
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "aya_linux_5_10_270",
+    build_file_content = 'exports_files(["Makefile"])',
+    integrity = "sha256-3nPVKLBL6R9uuGZgqmek1TuWu/ILtaMm54+ALXRN6+c=",
+    patch_args = ["-p1"],
+    patches = [
+        "@linux.bzl//native:linux_piggy_dependency.patch",
+        "@linux.bzl//native:linux_5_10_resolve_btfids.patch",
+    ],
+    strip_prefix = "linux-5.10.270",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.10.270.tar.xz"],
 )
 
-# Convert each requested Kconfig fragment into a KconfigInfo repository.
-linux_kernel.kconfig(
-    name = "aya_aarch64_kconfig",
-    config = "//test/kernel:aya_aarch64.config",
-)
-linux_kernel.kconfig(
-    name = "aya_x86_64_kconfig",
-    config = "//test/kernel:aya_x86_64.config",
+http_archive(
+    name = "aya_linux_5_15_221",
+    build_file_content = 'exports_files(["Makefile"])',
+    integrity = "sha256-wHiC4eUo7+IGVnom3jCxktuNxDaZdNTvTOcIaR+hFIw=",
+    patch_args = ["-p1"],
+    patches = [
+        "@linux.bzl//native:linux_piggy_dependency.patch",
+        "@linux.bzl//native:linux_5_15_resolve_btfids.patch",
+    ],
+    strip_prefix = "linux-5.15.221",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.15.221.tar.xz"],
 )
 
-# Generate architecture-specific compact Kbuild metadata from
-# aya_aarch64.config and aya_x86_64.config.
-# linux.bzl encodes pahole 1.31 as "131" for the CONFIG_DEBUG_INFO_BTF probe;
-# keep this value synchronized with bazel_dep(name = "pahole") above.
-# TODO(https://github.com/hermeticbuild/linux.bzl/issues/6): Teach linux.bzl to
-# derive pahole_version from the pahole toolchain.
-linux_kernel.compact(
-    name = "aya_aarch64_compact",
-    config = "//test/kernel:aya_aarch64.config",
-    config_mode = "allnoconfig",
-    config_name = "aarch64",
-    kernel_name = "aya_kernel",
-    kernel_package = "test/kernel",
-    probe_values = {"pahole_version": "131"},
-    source_repo = "aya_linux_6_18_2",
+http_archive(
+    name = "aya_linux_6_1_188",
+    build_file_content = 'exports_files(["Makefile"])',
+    integrity = "sha256-7U0KyxMHwjUjDInvwJTiEOYpBZP5Sn5hfyixABEBozo=",
+    patch_args = ["-p1"],
+    patches = ["@linux.bzl//native:linux_piggy_dependency.patch"],
+    strip_prefix = "linux-6.1.188",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.1.188.tar.xz"],
 )
-linux_kernel.compact(
-    name = "aya_x86_64_compact",
-    config = "//test/kernel:aya_x86_64.config",
-    config_mode = "allnoconfig",
-    config_name = "x86_64",
-    kernel_name = "aya_kernel",
-    kernel_package = "test/kernel",
-    probe_values = {"pahole_version": "131"},
-    source_repo = "aya_linux_6_18_2",
+
+http_archive(
+    name = "aya_linux_6_6_157",
+    build_file_content = 'exports_files(["Makefile"])',
+    integrity = "sha256-t0pD0GMICbeHHMkGrBVelWy8Cy54p0UfXmyL/LEgjDA=",
+    patch_args = ["-p1"],
+    patches = ["@linux.bzl//native:linux_piggy_dependency.patch"],
+    strip_prefix = "linux-6.6.157",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.157.tar.xz"],
 )
-use_repo(
-    linux_kernel,
-    "aya_aarch64_compact",
-    "aya_aarch64_kconfig",
-    "aya_linux_6_18_2",
-    "aya_x86_64_compact",
-    "aya_x86_64_kconfig",
+
+http_archive(
+    name = "aya_linux_6_12_110",
+    build_file_content = 'exports_files(["Makefile"])',
+    integrity = "sha256-jO4Z4YObtv9NUlTXYZM65qtnBJLV7QMOCagFODINXEw=",
+    patch_args = ["-p1"],
+    patches = ["@linux.bzl//native:linux_piggy_dependency.patch"],
+    strip_prefix = "linux-6.12.110",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.110.tar.xz"],
+)
+
+http_archive(
+    name = "aya_linux_6_18_52",
+    build_file_content = 'exports_files(["Makefile"])',
+    integrity = "sha256-K2lWT31P6gyFmxlZujNwnubpE5vRAOMKhTtXFZqCIbg=",
+    patch_args = ["-p1"],
+    patches = ["@linux.bzl//native:linux_piggy_dependency.patch"],
+    strip_prefix = "linux-6.18.52",
+    urls = ["https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.52.tar.xz"],
+)
+
+kernel_repository_tool = use_repo_rule("@linux.bzl//:repository.bzl", "kernel_repository_tool")
+
+kernel_repository = use_repo_rule("@linux.bzl//:repository.bzl", "kernel_repository")
+
+kernel_config_fragments = [
+    "//test/kernel:aya_aarch64.config",
+    "//test/kernel:aya_x86_64.config",
+]
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_5_10",
+    manifest = "//test/kernel:generator_5_10.json",
+)
+
+kernel_repository(
+    name = "aya_kernel_5_10",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_5_10//:kernel-repository",
+    source = "@aya_linux_5_10_270//:Makefile",
+)
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_5_15",
+    manifest = "//test/kernel:generator_5_15.json",
+)
+
+kernel_repository(
+    name = "aya_kernel_5_15",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_5_15//:kernel-repository",
+    source = "@aya_linux_5_15_221//:Makefile",
+)
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_6_1",
+    manifest = "//test/kernel:generator_6_1.json",
+)
+
+kernel_repository(
+    name = "aya_kernel_6_1",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_6_1//:kernel-repository",
+    source = "@aya_linux_6_1_188//:Makefile",
+)
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_6_6",
+    manifest = "//test/kernel:generator_6_6.json",
+)
+
+kernel_repository(
+    name = "aya_kernel_6_6",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_6_6//:kernel-repository",
+    source = "@aya_linux_6_6_157//:Makefile",
+)
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_6_12",
+    manifest = "//test/kernel:generator_6_12.json",
+)
+
+kernel_repository(
+    name = "aya_kernel_6_12",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_6_12//:kernel-repository",
+    source = "@aya_linux_6_12_110//:Makefile",
+)
+
+kernel_repository_tool(
+    name = "aya_kernel_generator_6_18",
+    manifest = "//test/kernel:generator_6_18.json",
+)
+
+kernel_repository(
+    name = "aya_kernel_6_18",
+    config_fragments = kernel_config_fragments,
+    consumer_build_file = "//test/kernel:kernel.BUILD.bazel",
+    generator = "@aya_kernel_generator_6_18//:kernel-repository",
+    source = "@aya_linux_6_18_52//:Makefile",
 )
