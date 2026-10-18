@@ -12,6 +12,15 @@ common --repo_env=BAZEL_NO_APPLE_CPP_TOOLCHAIN=1
 # Use platform names in output directories created by BPF and VM transitions.
 common --experimental_platform_in_output_dir
 
+# Allow kernel compiler actions to share cached work across configurations.
+common --experimental_output_paths=strip
+common --modify_execution_info=CppCompile=+supports-path-mapping
+
+# Rust links flatten C/C++ toolchain paths into strings that Bazel cannot map.
+# Remove this restriction when rules_rust uses path-aware cc_common expansion.
+# https://github.com/bazelbuild/rules_rust/issues/4250
+common --modify_execution_info=Rustc=-supports-path-mapping
+
 # Aya's eBPF crates require unstable BPF inline assembly.
 common --@rules_rust//rust/toolchain/channel=nightly
 

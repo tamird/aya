@@ -3,4 +3,11 @@ package(default_visibility = ["//visibility:public"])
 exports_files([
     "aya_aarch64.config",
     "aya_x86_64.config",
+    "generator_5_10.json",
+    "generator_5_15.json",
+    "generator_6_1.json",
+    "generator_6_6.json",
+    "generator_6_12.json",
+    "generator_6_18.json",
+    "kernel.BUILD.bazel",
 ])

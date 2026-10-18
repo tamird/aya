@@ -1,7 +1,12 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 
 exports_files(
-    ["llvm_kbuild_actions.patch"],
+    [
+        "rules_bison_cstdlib.patch",
+        "rules_cc_autoconf_no_host_shell.patch",
+        "rules_cc_autoconf_no_path_mapping.patch",
+        "rules_cc_ir.patch",
+    ],
     visibility = ["//visibility:public"],
 )
 

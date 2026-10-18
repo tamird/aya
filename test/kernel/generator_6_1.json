@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "platforms": {
+    "linux_x86_64": {
+      "url": "https://github.com/tamird/linux.bzl/releases/download/kernel-repository-316e3ba7b7b2769fe49830d55206dd729120cc49-linux-x86_64/kernel-repository-linux-6.1-linux-x86_64.tar.gz",
+      "integrity": "sha256-suTTP2xiW37skBokr4BDxD0DMT2MycN423H8Zt9mJtA="
+    },
+    "macos_aarch64": {
+      "url": "https://github.com/tamird/linux.bzl/releases/download/kernel-repository-316e3ba7b7b2769fe49830d55206dd729120cc49-macos-aarch64/kernel-repository-linux-6.1-macos-aarch64.tar.gz",
+      "integrity": "sha256-d25ShYpL7No34Lnw3py6Aeo3EADSZ2gFyImmP0dRfs8="
+    }
+  }
+}
