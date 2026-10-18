@@ -1,13 +1,13 @@
 {
   "format": 1,
   "platforms": {
-    "linux_x86_64": {
-      "url": "https://github.com/tamird/linux.bzl/releases/download/kernel-repository-316e3ba7b7b2769fe49830d55206dd729120cc49-linux-x86_64/kernel-repository-linux-6.6-linux-x86_64.tar.gz",
-      "integrity": "sha256-mtRZYKlB3VVzIjGGto7j82F3jjLMz+GwL1Nuo5DSSUI="
-    },
     "macos_aarch64": {
-      "url": "https://github.com/tamird/linux.bzl/releases/download/kernel-repository-316e3ba7b7b2769fe49830d55206dd729120cc49-macos-aarch64/kernel-repository-linux-6.6-macos-aarch64.tar.gz",
-      "integrity": "sha256-PifmfIkbRsOJpNlHNSOPB3Imlwi2bgc2d5RAS8g856k="
+      "url": "https://github.com/tamird/linux.bzl/releases/download/kernel-repository-4eac74e59ec11781b6ddcdf4be492f752b12f310-macos-aarch64/kernel-repository-linux-6.6-macos-aarch64.tar.gz",
+      "integrity": "sha256-fUbvmkIM3nG8+Lw7iMUqBgkWyIqjBuYF/kwV2l3+ZXs="
+    },
+    "linux_x86_64": {
+      "url": "https://github.com/tamird/linux.bzl/releases/download/kernel-repository-4eac74e59ec11781b6ddcdf4be492f752b12f310-linux-x86_64/kernel-repository-linux-6.6-linux-x86_64.tar.gz",
+      "integrity": "sha256-0pJE8fWWAi1oUfxsJ8wVVjoYLe6NNm1P9LgS7goU15M="
     }
   }
 }

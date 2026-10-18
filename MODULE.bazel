@@ -72,9 +72,9 @@ use_repo(bazel_lib_toolchains, "copy_to_directory_toolchains")
 # Pin the static kernel rules and their source parser.
 archive_override(
     module_name = "linux.bzl",
-    integrity = "sha256-bLLmFuBrgg2NYuMSy5OlC8myb4N1JbcovwUGorXcX9o=",
-    strip_prefix = "linux.bzl-316e3ba7b7b2769fe49830d55206dd729120cc49",
-    urls = ["https://github.com/tamird/linux.bzl/archive/316e3ba7b7b2769fe49830d55206dd729120cc49.tar.gz"],
+    integrity = "sha256-tYg6phB9jY9pxf70Lk7xyX22hhrXkITaVXgCCk8Isn0=",
+    strip_prefix = "linux.bzl-4eac74e59ec11781b6ddcdf4be492f752b12f310",
+    urls = ["https://github.com/tamird/linux.bzl/archive/4eac74e59ec11781b6ddcdf4be492f752b12f310.tar.gz"],
 )
 
 # Compiler metadata and execution tools are shared by all kernel repositories.
